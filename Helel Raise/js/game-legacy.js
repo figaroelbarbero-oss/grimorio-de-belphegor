@@ -37,6 +37,9 @@ function startGame() {
   // ---- Start Perception Attacks ----
   try { PerceptionAttack.startAttacks(); } catch(e) {}
 
+  // Emit game start event for all systems
+  try { GameBus.emit(GameEvents.GAME_START, { isNewGamePlus: Persistence.isNewGamePlus(), run: Persistence.getPlaythroughs() }); } catch(e) {}
+
   loadScene('intro');
   // Start ambient horror system
   JumpscareEngine.startAmbient();
@@ -224,6 +227,8 @@ function maybeRandomScare() {
 
 function loadScene(sceneId, fromRisk) {
   if (sceneId === 'restart') {
+    // Emit restart event — init.js handles cleanup
+    try { GameBus.emit(GameEvents.GAME_RESTART); } catch(e) {}
     JumpscareEngine.stopAmbient();
     CursedCursor.destroy();
     try { TextCorruption.stopCorruptionLoop(); } catch(e) {}
@@ -273,6 +278,9 @@ function loadScene(sceneId, fromRisk) {
 
   state.history.push(sceneId);
   document.getElementById('chapter-name').textContent = scene.chapter;
+
+  // Emit scene load for Phase 2 systems (map, clock, etc.)
+  try { GameBus.emit(GameEvents.SCENE_LOAD, { sceneId, scene, fromRisk: fromRisk || 'medium' }); } catch(e) {}
 
   const narrative = document.getElementById('narrative');
   const choices = document.getElementById('choices');

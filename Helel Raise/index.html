@@ -95,6 +95,33 @@
   </div>
 </div>
 
+<!-- ====== RPG HUD BAR ====== -->
+<div id="hud-bar">
+  <div id="clock-widget">
+    <canvas id="clock-canvas" width="36" height="36"></canvas>
+    <span id="clock-time">1:00</span>
+  </div>
+  <button class="hud-btn" onclick="MapEngine.toggle()"><span class="hud-icon">🗺️</span> Mapa</button>
+  <button class="hud-btn" onclick="StatsUI.toggle()"><span class="hud-icon">📜</span> Alma</button>
+  <button class="hud-btn" onclick="InventorySystem.toggle()"><span class="hud-icon">🎒</span> Objetos</button>
+</div>
+
+<!-- ====== OVERLAY PANELS ====== -->
+<div id="map-overlay" class="overlay-panel">
+  <button class="overlay-close" onclick="MapEngine.hide()">✕ CERRAR</button>
+  <canvas id="map-canvas"></canvas>
+</div>
+
+<div id="stats-overlay" class="overlay-panel">
+  <button class="overlay-close" onclick="StatsUI.hide()">✕ CERRAR</button>
+  <canvas id="stats-canvas"></canvas>
+</div>
+
+<div id="inventory-overlay" class="overlay-panel">
+  <button class="overlay-close" onclick="InventorySystem.hide()">✕ CERRAR</button>
+  <div id="inventory-panel"></div>
+</div>
+
 <!-- ====== ENGINE SCRIPTS (load order matters) ====== -->
 
 <!-- 1. Core: Event Bus (must be first) -->
@@ -127,6 +154,12 @@
 <script src="js/engines/inherited-objects.js"></script>
 <script src="js/engines/cursed-guide.js"></script>
 <script src="js/engines/perception-attack.js"></script>
+
+<!-- 6b. Phase 2 RPG Systems -->
+<script src="js/engines/map-engine.js"></script>
+<script src="js/engines/stats-ui.js"></script>
+<script src="js/engines/inventory-system.js"></script>
+<script src="js/engines/clock-engine.js"></script>
 
 <!-- 7. Data -->
 <script src="js/data/lore.js"></script>

@@ -138,6 +138,14 @@
     try { TextCorruption.stopCorruptionLoop(); } catch(e) {}
     try { HeartbeatSync.stopSync(); } catch(e) {}
     try { PerceptionAttack.stopAttacks(); } catch(e) {}
+
+    // Phase 2 cleanup
+    try { MapEngine.hide(); } catch(e) {}
+    try { StatsUI.hide(); } catch(e) {}
+    try { InventorySystem.hide(); } catch(e) {}
+    try { ClockEngine.reset(); } catch(e) {}
+    const hud = document.getElementById('hud-bar');
+    if (hud) hud.classList.remove('active');
   });
 
   // ---- Wire Game Start ----
@@ -145,6 +153,37 @@
     try { CursedCursor.init(); } catch(e) {}
     try { PerceptionAttack.startAttacks(); } catch(e) {}
     try { JumpscareEngine.startAmbient(); } catch(e) {}
+
+    // Phase 2: Initialize RPG systems
+    try { MapEngine.init(); } catch(e) {}
+    try { StatsUI.init(); } catch(e) {}
+    try { ClockEngine.init(); } catch(e) {}
+
+    // Show HUD bar
+    const hud = document.getElementById('hud-bar');
+    if (hud) hud.classList.add('active');
+  });
+
+  // ---- Wire Scene Load to Phase 2 systems ----
+  Bus.on(E.SCENE_LOAD, ({ sceneId, fromRisk }) => {
+    // Map: discover room from scene visit
+    try { MapEngine.discoverFromScene(sceneId); } catch(e) {}
+
+    // Clock: advance time based on choice risk
+    try { ClockEngine.advance(fromRisk || 'medium'); } catch(e) {}
+
+    // Check for forced clock events
+    try {
+      const pending = ClockEngine.getPendingEvent();
+      if (pending && typeof loadScene === 'function') {
+        setTimeout(() => loadScene(pending), 2000);
+      }
+    } catch(e) {}
+  });
+
+  // ---- Wire Inventory changes to panel refresh ----
+  Bus.on(E.INVENTORY_CHANGED, () => {
+    try { if (InventorySystem.isVisible()) InventorySystem.renderPanel(); } catch(e) {}
   });
 
   // ---- Keyboard Support ----
@@ -153,6 +192,16 @@
     if (num >= 1 && num <= 4) {
       const btns = document.querySelectorAll('.choice-btn');
       if (btns[num - 1]) btns[num - 1].click();
+    }
+
+    // RPG panel shortcuts
+    if (e.key.toLowerCase() === 'm') { try { MapEngine.toggle(); } catch(ex) {} }
+    if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey) { try { StatsUI.toggle(); } catch(ex) {} }
+    if (e.key.toLowerCase() === 'i') { try { InventorySystem.toggle(); } catch(ex) {} }
+    if (e.key === 'Escape') {
+      try { MapEngine.hide(); } catch(ex) {}
+      try { StatsUI.hide(); } catch(ex) {}
+      try { InventorySystem.hide(); } catch(ex) {}
     }
   });
 
