@@ -1,5 +1,5 @@
 // ====== NARRATIVE AI ENGINE ======
-const NarrativeAI = (() => {
+var NarrativeAI = (() => {
 
   // ---- PLAYER PSYCHOLOGICAL PROFILE ----
   const profile = {

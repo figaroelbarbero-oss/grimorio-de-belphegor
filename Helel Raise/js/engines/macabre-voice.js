@@ -1,5 +1,5 @@
 // ====== MACABRE VOICE ENGINE ======
-const MacabreVoice = (() => {
+var MacabreVoice = (() => {
   let enabled = false;
   let speaking = false;
   let currentUtterance = null;

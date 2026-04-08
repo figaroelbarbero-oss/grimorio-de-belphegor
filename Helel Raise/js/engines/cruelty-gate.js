@@ -1,6 +1,6 @@
 // ====== CRUELTY CONSEQUENCES ENGINE ======
 // Blocks good endings when cruelty/corruption is too high
-const CrueltyGate = (() => {
+var CrueltyGate = (() => {
 
   function shouldBlockGoodEnding() {
     const profile = NarrativeAI.getProfile();

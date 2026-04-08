@@ -1,5 +1,5 @@
 // ====== JUMPSCARE ENGINE ======
-const JumpscareEngine = (() => {
+var JumpscareEngine = (() => {
   let scareCount = 0;
   let lastScareTime = 0;
   let ambientTimers = [];

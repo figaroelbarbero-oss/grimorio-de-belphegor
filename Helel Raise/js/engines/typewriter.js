@@ -1,5 +1,5 @@
 // ====== TYPEWRITER EFFECT ======
-let typewriterTimeout = null;
+var typewriterTimeout = null;
 
 function typewrite(element, html, callback) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);

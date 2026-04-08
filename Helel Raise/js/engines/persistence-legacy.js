@@ -1,5 +1,5 @@
 // ====== PERSISTENCE ENGINE (New Game+ & Achievements) ======
-const Persistence = (() => {
+var Persistence = (() => {
   const STORAGE_KEY = 'grimorio_belphegor_save';
   let data = null;
 

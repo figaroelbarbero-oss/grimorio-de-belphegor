@@ -1,6 +1,6 @@
 // ====== BELPHEGOR NAME TRAP ENGINE ======
 // If player discovers ROGEHPLEB, Belphegor sows doubt about it
-const NameTrap = (() => {
+var NameTrap = (() => {
   const doubtLines = [
     '<br><br><span class="highlight">"ROGEHPLEB... Sí, conozco esa palabrita. ¿Quién te la enseñó? ¿El libro de supervivencia? Ese libro lo escribí YO."</span>',
     '<br><br><span class="highlight">"¿De verdad crees que dejaría mi debilidad escrita en un libro dentro de MI casa? Piensa, mortal."</span>',

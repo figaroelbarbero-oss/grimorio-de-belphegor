@@ -1,5 +1,5 @@
 // ====== DEMONIC SOUND DESIGN ENGINE ======
-const SoundDesign = (() => {
+var SoundDesign = (() => {
 
   // Helper: get audio context
   function ctx() { return audioCtx; }

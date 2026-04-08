@@ -1,6 +1,6 @@
 // ====== DEMON WHISPERS ENGINE ======
 // Contradictory whispered voices that suggest different choices
-const DemonWhispers = (() => {
+var DemonWhispers = (() => {
   let active = false;
   let whisperQueue = [];
   let whisperTimers = [];

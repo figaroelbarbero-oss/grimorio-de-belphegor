@@ -1,6 +1,6 @@
 // ====== NG+ INHERITED OBJECTS ENGINE ======
 // Carries certain items across playthroughs
-const InheritedObjects = (() => {
+var InheritedObjects = (() => {
   const inheritableItems = {
     '🪞 Fragmento de espejo': { minRuns: 2, requiredEnding: 'final_bueno_espejo' },
     '📕 Libro de Supervivencia': { minRuns: 2, requiredEnding: null },

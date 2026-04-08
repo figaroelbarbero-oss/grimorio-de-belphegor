@@ -49,7 +49,7 @@ function startGame() {
 }
 
 // Scene-specific jumpscare triggers
-const sceneScares = {
+var sceneScares = {
   'intro': () => {
     setTimeout(() => SoundDesign.somethingApproaches(), 3000);
   },
@@ -409,7 +409,7 @@ function loadScene(sceneId, fromRisk) {
 }
 
 // ---- Lore Fragment Discovery System ----
-const loreSceneMap = {
+var loreSceneMap = {
   'dintel': 'casa_origen',
   'biblioteca': 'grimorio_paginas',
   'ouija_contacto': 'ouija_historia',

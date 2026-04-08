@@ -1,6 +1,6 @@
 // ====== TEXT CORRUPTION ENGINE ======
 // Progressive visual corruption when soul < 40
-const TextCorruption = (() => {
+var TextCorruption = (() => {
   const corruptChars = '̷̸̵̶̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚͠͡ͅ'.split('');
   const glitchSymbols = ['⛧','▓','░','█','╳','◆','⬡','☠','♰','⛤','∞','Ω','λ','ψ','†'];
   let corruptionInterval = null;

@@ -2,7 +2,7 @@
 // Items have properties. Combining items creates new ones.
 // Inventory capacity tied to corruption vs purity.
 
-const InventorySystem = (() => {
+var InventorySystem = (() => {
   let visible = false;
   let selectedSlot = -1;
   let combineMode = false;

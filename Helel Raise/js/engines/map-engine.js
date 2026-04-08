@@ -2,7 +2,7 @@
 // Interactive house map rendered on canvas with explorable rooms.
 // The map corrupts visually as soul decreases.
 
-const MapEngine = (() => {
+var MapEngine = (() => {
   let canvas, ctx;
   let visible = false;
   let animFrame = null;

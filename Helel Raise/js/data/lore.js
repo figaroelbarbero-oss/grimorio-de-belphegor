@@ -1,5 +1,5 @@
 // ====== LORE FRAGMENTS (collectible story pieces) ======
-const LoreFragments = {
+var LoreFragments = {
   'casa_origen': 'La casa fue construida en 1847 por un arquitecto cuyo nombre fue borrado de todos los registros. Lo único que queda es una nota: "Diseñé cada habitación como una trampa. Cada pasillo como un intestino. La casa no alberga personas. Las digiere."',
   'belphegor_nombre': 'BELPHEGOR — Del hebreo Ba\'al Pe\'or, Señor de la Abertura. Demonio de la pereza y la inventiva. Se dice que tienta a los mortales con descubrimientos y riqueza, pero el precio siempre excede el regalo. Su nombre invertido, ROGEHPLEB, es la única palabra que lo ata.',
   'ouija_historia': 'La tabla Ouija de la casa no fue fabricada. Creció. La madera es de un árbol que nunca existió en ningún bosque terrestre. Las letras aparecieron solas, grabadas por algo que necesitaba comunicarse pero carecía de boca.',

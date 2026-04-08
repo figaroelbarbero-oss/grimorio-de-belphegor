@@ -1,8 +1,8 @@
 // ====== PARTICLE CANVAS ======
-const particleCanvas = document.getElementById('particle-canvas');
-const ctx = particleCanvas.getContext('2d');
-let particles = [];
-let bloodDrops = [];
+var particleCanvas = document.getElementById('particle-canvas');
+var ctx = particleCanvas.getContext('2d');
+var particles = [];
+var bloodDrops = [];
 
 function resizeCanvas() {
   particleCanvas.width = window.innerWidth;

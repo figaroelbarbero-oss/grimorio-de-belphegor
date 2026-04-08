@@ -1,5 +1,5 @@
 // ====== GAME STATE ======
-let state = {
+var state = {
   soul: 100,
   inventory: [],
   chapter: 0,

@@ -2,7 +2,7 @@
 // A cursed clock with 13 hours. Decisions advance it.
 // At hour 6:66, an unavoidable event triggers.
 
-const ClockEngine = (() => {
+var ClockEngine = (() => {
   let canvas, ctx;
   let hour = 1;
   let minute = 0;

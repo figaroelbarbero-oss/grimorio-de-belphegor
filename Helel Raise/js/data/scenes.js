@@ -1,5 +1,5 @@
 // ====== SCENE SYSTEM ======
-const scenes = {
+var scenes = {
   // ===== CHAPTER I: EL UMBRAL =====
   intro: {
     chapter: "Capítulo I — El Umbral",

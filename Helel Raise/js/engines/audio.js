@@ -1,11 +1,11 @@
 // ====== AUDIO ENGINE (Web Audio API) ======
-let audioCtx = null;
-let audioEnabled = false;
-let droneOsc = null;
-let droneGain = null;
+var audioCtx = null;
+var audioEnabled = false;
+var droneOsc = null;
+var droneGain = null;
 
-const horrorMusic = document.getElementById('horror-music');
-let musicPlaying = false;
+var horrorMusic = document.getElementById('horror-music');
+var musicPlaying = false;
 
 function initAudio() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();

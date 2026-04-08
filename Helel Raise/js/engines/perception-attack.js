@@ -1,6 +1,6 @@
 // ====== INVENTORY PERCEPTION ATTACK ENGINE ======
 // Briefly changes inventory item names to unsettle the player
-const PerceptionAttack = (() => {
+var PerceptionAttack = (() => {
   const replacements = {
     '🕯️ Vela negra': ['🕯️ Vela vacía', '🕯️ Tu última luz', '🕯️ Cuenta regresiva'],
     '📖 Grimorio de Belphegor': ['📖 TU grimorio', '📖 Libro de carne', '📖 Él te lee'],

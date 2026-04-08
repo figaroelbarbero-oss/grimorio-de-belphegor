@@ -1,5 +1,5 @@
 // ====== DYNAMIC BACKGROUNDS ENGINE ======
-const DynamicBackgrounds = (() => {
+var DynamicBackgrounds = (() => {
   let bgCanvas, bgCtx;
   let currentScene = 'void';
   let transitionProgress = 0;

@@ -2,7 +2,7 @@
 // Shows player's psychological profile as a page from the Grimoire.
 // Stats visualized as glowing sigils. Skill tree shaped like inverted pentagram.
 
-const StatsUI = (() => {
+var StatsUI = (() => {
   let canvas, ctx;
   let visible = false;
   let animFrame = null;

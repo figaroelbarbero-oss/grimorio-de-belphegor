@@ -1,6 +1,6 @@
 // ====== HEARTBEAT SYNC ENGINE ======
 // Synchronizes visual blood-pulse with audio dreadHeartbeat
-const HeartbeatSync = (() => {
+var HeartbeatSync = (() => {
   let syncActive = false;
   let beatInterval = null;
 

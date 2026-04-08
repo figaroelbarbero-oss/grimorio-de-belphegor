@@ -1,5 +1,5 @@
 // ====== CURSED CURSOR ENGINE ======
-const CursedCursor = (() => {
+var CursedCursor = (() => {
   let active = false;
   let trailCanvas, trailCtx;
   let mouseX = 0, mouseY = 0;

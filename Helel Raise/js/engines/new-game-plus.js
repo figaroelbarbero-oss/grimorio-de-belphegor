@@ -1,5 +1,5 @@
 // ====== NEW GAME+ ENGINE ======
-const NewGamePlus = (() => {
+var NewGamePlus = (() => {
 
   function isActive() { return Persistence.isNewGamePlus(); }
   function getRun() { return Persistence.getPlaythroughs(); }

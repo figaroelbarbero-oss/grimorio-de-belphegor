@@ -1,6 +1,6 @@
 // ====== CURSED GUIDE ENGINE (Run 7+) ======
 // DemonWhispers become a "guide" revealing paths to unseen endings
-const CursedGuide = (() => {
+var CursedGuide = (() => {
   function isActive() {
     try { return Persistence.getPlaythroughs() >= 7; } catch(e) { return false; }
   }
