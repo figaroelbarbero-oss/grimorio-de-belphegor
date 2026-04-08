@@ -796,7 +796,7 @@
 
 <!-- Horror Ambient Music -->
 <audio id="horror-music" loop preload="auto">
-  <source src="horror_ambient.mp3" type="audio/mpeg">
+  <source src="audio/horror_ambient.mp3" type="audio/mpeg">
 </audio>
 
 <button id="voice-toggle" onclick="toggleVoice()">🗣 VOZ</button>
@@ -3010,29 +3010,29 @@ const MacabreVoice = (() => {
 
       switch (mood) {
         case 'belphegor':
-          // Deep, slow, menacing
-          utterance.pitch = 0.3 + Math.random() * 0.15;
-          utterance.rate = 0.55 + Math.random() * 0.1;
+          // Abyssal, guttural
+          utterance.pitch = 0.1 + Math.random() * 0.1;
+          utterance.rate = 0.45 + Math.random() * 0.08;
           utterance.volume = 0.9;
           break;
         case 'whisper':
-          // Quiet, breathy, fast
-          utterance.pitch = 0.6 + Math.random() * 0.2;
-          utterance.rate = 0.7 + Math.random() * 0.15;
-          utterance.volume = 0.4;
+          // Quiet, breathy, low
+          utterance.pitch = 0.3 + Math.random() * 0.15;
+          utterance.rate = 0.6 + Math.random() * 0.1;
+          utterance.volume = 0.35;
           break;
         case 'scream':
-          // High pitch burst
-          utterance.pitch = 1.2 + Math.random() * 0.3;
-          utterance.rate = 1.3;
+          // Distorted roar (lower than before)
+          utterance.pitch = 0.8 + Math.random() * 0.3;
+          utterance.rate = 1.2;
           utterance.volume = 1.0;
           break;
         case 'narrator':
         default:
-          // Ominous narrator — low, deliberate
-          utterance.pitch = 0.45 + Math.random() * 0.15;
-          utterance.rate = 0.65 + Math.random() * 0.1;
-          utterance.volume = 0.85;
+          // Deep gravelly narrator — much lower pitch
+          utterance.pitch = 0.15 + Math.random() * 0.1;
+          utterance.rate = 0.55 + Math.random() * 0.08;
+          utterance.volume = 0.9;
           break;
       }
 
