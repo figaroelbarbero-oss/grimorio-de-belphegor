@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Grimorio de Belphegor</title>
+<link rel="stylesheet" href="css/grimorio.css">
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<canvas id="particle-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;"></canvas>
+
+<!-- Pentagram SVG Background -->
+<svg id="pentagram-bg" viewBox="0 0 200 200">
+  <polygon points="100,10 127,75 195,75 140,115 160,185 100,145 40,185 60,115 5,75 73,75"
+    fill="none" stroke="#8b0000" stroke-width="0.5"/>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#8b0000" stroke-width="0.3"/>
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#2d0050" stroke-width="0.2"/>
+</svg>
+
+<div id="vignette"></div>
+<div id="damage-flash"></div>
+<div id="spell-overlay"><canvas id="spell-canvas"></canvas></div>
+
+<!-- JUMPSCARE OVERLAYS -->
+<div id="jumpscare-overlay"><canvas id="jumpscare-canvas"></canvas></div>
+<div id="subliminal-flash"><canvas id="subliminal-canvas"></canvas></div>
+<div id="vhs-glitch"><canvas id="glitch-canvas"></canvas></div>
+<div id="static-overlay"></div>
+<canvas id="door-peek"></canvas>
+<div id="creepy-text"></div>
+
+<!-- Blood Drips -->
+<div class="blood-drip" style="left: 12%; animation-delay: 0s;"></div>
+<div class="blood-drip" style="left: 35%; animation-delay: 1.5s;"></div>
+<div class="blood-drip" style="left: 58%; animation-delay: 0.8s;"></div>
+<div class="blood-drip" style="left: 78%; animation-delay: 2.2s;"></div>
+<div class="blood-drip" style="left: 92%; animation-delay: 3s;"></div>
+
+<!-- Horror Ambient Music -->
+<audio id="horror-music" loop preload="auto">
+  <source src="audio/horror_ambient.mp3" type="audio/mpeg">
+</audio>
+
+<button id="voice-toggle" onclick="toggleVoice()">🗣 VOZ</button>
+<button id="audio-toggle" onclick="toggleAudio()">♪ SONIDO</button>
+
+<!-- GAME CONTAINER -->
+<div id="game">
+
+  <!-- TITLE SCREEN -->
+  <div id="title-screen">
+    <div style="margin-bottom: 20px; opacity: 0.3; font-size: 3rem; color: var(--blood);">⛧</div>
+    <h1>El Grimorio<br>de Belphegor</h1>
+    <p class="subtitle">— Un Juego de Ouija Maldita —</p>
+    <div style="margin: 30px 0; opacity: 0.15; letter-spacing: 12px; font-size: 0.7rem; color: var(--blood);">
+      A B C D E F G H I J K L M<br>
+      N O P Q R S T U V W X Y Z<br><br>
+      1 2 3 4 5 6 7 8 9 0
+    </div>
+    <button id="start-btn" onclick="startGame()">⛧ ABRIR EL GRIMORIO ⛧</button>
+    <p style="margin-top: 30px; font-size: 0.65rem; opacity: 0.3; letter-spacing: 2px;">
+      ADIÓS · GOODBYE · VALE
+    </p>
+  </div>
+
+  <!-- GAME BOARD -->
+  <div id="ouija-frame">
+    <div class="ouija-corner tl"></div>
+    <div class="ouija-corner tr"></div>
+    <div class="ouija-corner bl"></div>
+    <div class="ouija-corner br"></div>
+    <div class="ouija-sun">☉</div>
+    <div class="ouija-moon">☽</div>
+
+    <div id="status-bar">
+      <div class="soul-container">
+        <span class="soul-label">Alma</span>
+        <div class="soul-bar">
+          <div class="soul-fill" id="soul-fill" style="width: 100%"></div>
+        </div>
+        <span class="soul-value" id="soul-value">100</span>
+      </div>
+      <span id="chapter-name"></span>
+    </div>
+
+    <div id="inventory-section">
+      <div class="inv-label">Inventario</div>
+      <div id="inventory"></div>
+    </div>
+
+    <div id="narrative"></div>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<!-- ====== ENGINE SCRIPTS (load order matters) ====== -->
+
+<!-- 1. Core: Event Bus (must be first) -->
+<script src="js/game-bus-global.js"></script>
+
+<!-- 2. Audio Engines -->
+<script src="js/engines/audio.js"></script>
+<script src="js/engines/sound-design.js"></script>
+
+<!-- 3. Visual Engines -->
+<script src="js/engines/particles.js"></script>
+<script src="js/engines/dynamic-bg.js"></script>
+<script src="js/engines/cursed-cursor.js"></script>
+<script src="js/engines/jumpscare.js"></script>
+
+<!-- 4. Narrative Engines -->
+<script src="js/engines/macabre-voice.js"></script>
+<script src="js/engines/demon-whispers.js"></script>
+<script src="js/engines/narrative-ai.js"></script>
+
+<!-- 5. Persistence & NG+ -->
+<script src="js/engines/persistence-legacy.js"></script>
+<script src="js/engines/new-game-plus.js"></script>
+
+<!-- 6. v2 Enhancement Engines -->
+<script src="js/engines/text-corruption.js"></script>
+<script src="js/engines/heartbeat-sync.js"></script>
+<script src="js/engines/name-trap.js"></script>
+<script src="js/engines/cruelty-gate.js"></script>
+<script src="js/engines/inherited-objects.js"></script>
+<script src="js/engines/cursed-guide.js"></script>
+<script src="js/engines/perception-attack.js"></script>
+
+<!-- 7. Data -->
+<script src="js/data/lore.js"></script>
+<script src="js/data/scenes.js"></script>
+
+<!-- 8. Legacy Game State & Functions -->
+<script src="js/engines/game-state-legacy.js"></script>
+<script src="js/engines/typewriter.js"></script>
+<script src="js/game-legacy.js"></script>
+
+<!-- 9. Event Wiring (must be last) -->
+<script src="js/init.js"></script>
+
+</body>
+</html>
