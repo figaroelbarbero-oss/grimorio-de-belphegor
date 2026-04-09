@@ -598,20 +598,74 @@ var JumpscareEngine = (() => {
     }, 10000 + Math.random() * 10000);
   }
 
-  // 8) Combined horror sequence — multiple effects chained
+  // 8) Combined horror sequence — multiple effects chained (now uses real media)
   function triggerHorrorSequence() {
     triggerStatic();
     setTimeout(() => triggerGlitch(), 200);
-    setTimeout(() => triggerFullJumpscare(), 500);
-    setTimeout(() => triggerCreepyText(), 1200);
+    // 50% chance: real video jumpscare, 50%: procedural face
+    if (Math.random() < 0.5 && typeof MediaEngine !== 'undefined') {
+      setTimeout(() => {
+        var vids = ['jumpscare_animation', 'jumpscare_goat'];
+        MediaEngine.playVideo(vids[Math.floor(Math.random() * vids.length)], 'jumpscare', 50);
+      }, 500);
+    } else {
+      setTimeout(() => triggerFullJumpscare(), 500);
+    }
+    // Subliminal photo flash instead of just text sometimes
+    setTimeout(() => {
+      if (Math.random() < 0.4 && typeof MediaEngine !== 'undefined') {
+        MediaEngine.subliminalPhoto();
+      }
+      triggerCreepyText();
+    }, 1200);
     setTimeout(() => playJumpscareSound('heartbeat'), 2000);
+  }
+
+  // 9) Real photo jumpscare — full-screen horror image flash
+  function triggerPhotoJumpscare() {
+    if (typeof MediaEngine === 'undefined') return triggerFullJumpscare();
+    var now = Date.now();
+    if (now - lastScareTime < MIN_SCARE_INTERVAL) return;
+    lastScareTime = now;
+    scareCount++;
+
+    musicDrop();
+    setTimeout(() => playJumpscareSound('full'), 400);
+    document.body.classList.add('shake');
+    MediaEngine.subliminalPhoto();
+    setTimeout(() => document.body.classList.remove('shake'), 600);
+  }
+
+  // 10) Real video jumpscare
+  function triggerVideoJumpscare() {
+    if (typeof MediaEngine === 'undefined') return triggerFullJumpscare();
+    var now = Date.now();
+    if (now - lastScareTime < MIN_SCARE_INTERVAL) return;
+    lastScareTime = now;
+    scareCount++;
+
+    var vids = ['jumpscare_animation', 'jumpscare_goat'];
+    var pick = vids[Math.floor(Math.random() * vids.length)];
+
+    musicDrop();
+    setTimeout(() => {
+      playJumpscareSound('full');
+      MediaEngine.playVideo(pick, 'jumpscare', 50);
+    }, 400);
   }
 
   // ---- AMBIENT SCARE SYSTEM ----
   function startAmbientScares() {
-    // Subliminal flashes every 30-90s
+    // Subliminal flashes every 30-90s (now mixes real photos)
     ambientTimers.push(setInterval(() => {
-      if (Math.random() < 0.4) triggerSubliminal();
+      if (Math.random() < 0.4) {
+        // 40% chance real photo, 60% procedural
+        if (Math.random() < 0.4 && typeof MediaEngine !== 'undefined') {
+          MediaEngine.subliminalPhoto();
+        } else {
+          triggerSubliminal();
+        }
+      }
     }, 30000 + Math.random() * 60000));
 
     // Shadow figures every 45-120s
@@ -634,8 +688,30 @@ var JumpscareEngine = (() => {
       if (Math.random() < 0.5) triggerGlitch();
     }, 25000 + Math.random() * 35000));
 
-    // First scare — subliminal after 8-15s
-    setTimeout(() => triggerSubliminal(), 8000 + Math.random() * 7000);
+    // Subliminal video flashes every 50-120s (rare, unsettling)
+    ambientTimers.push(setInterval(() => {
+      if (Math.random() < 0.2 && typeof MediaEngine !== 'undefined') {
+        MediaEngine.subliminalVideo();
+      }
+    }, 50000 + Math.random() * 70000));
+
+    // Atmospheric suffering tree video every 90-200s (ambient dread)
+    ambientTimers.push(setInterval(() => {
+      if (Math.random() < 0.15 && typeof MediaEngine !== 'undefined') {
+        var soul = 100;
+        try { soul = state.soul; } catch(e) {}
+        MediaEngine.playVideo('suffering_tree', 'atmospheric', soul);
+      }
+    }, 90000 + Math.random() * 110000));
+
+    // First scare — subliminal photo after 8-15s
+    setTimeout(() => {
+      if (typeof MediaEngine !== 'undefined') {
+        MediaEngine.subliminalPhoto();
+      } else {
+        triggerSubliminal();
+      }
+    }, 8000 + Math.random() * 7000);
 
     // First shadow figure after 20s
     setTimeout(() => spawnShadowFigure(), 20000);
@@ -649,6 +725,8 @@ var JumpscareEngine = (() => {
   // ---- PUBLIC API ----
   return {
     fullJumpscare: triggerFullJumpscare,
+    photoJumpscare: triggerPhotoJumpscare,
+    videoJumpscare: triggerVideoJumpscare,
     subliminal: triggerSubliminal,
     glitch: triggerGlitch,
     static: triggerStatic,

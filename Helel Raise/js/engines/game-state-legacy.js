@@ -27,12 +27,14 @@ function addItem(item) {
   if (!state.inventory.includes(item)) {
     state.inventory.push(item);
     updateUI();
+    try { GameBus.emit(GameEvents.INVENTORY_CHANGED, { inventory: state.inventory }); } catch(e) {}
   }
 }
 
 function removeItem(item) {
   state.inventory = state.inventory.filter(i => i !== item);
   updateUI();
+  try { GameBus.emit(GameEvents.INVENTORY_CHANGED, { inventory: state.inventory }); } catch(e) {}
 }
 
 function changeSoul(amount) {
@@ -44,12 +46,14 @@ function changeSoul(amount) {
   } catch(e) {}
   state.soul = Math.max(0, Math.min(100, state.soul + amount));
   updateUI();
+
+  // Emit SOUL_CHANGED for all bus-wired systems (MediaEngine, BelphegorAI, etc.)
+  try { GameBus.emit(GameEvents.SOUL_CHANGED, { soul: state.soul, delta: amount }); } catch(e) {}
+
   if (amount < 0) {
     flashDamage();
     document.getElementById('ouija-frame').classList.add('shake');
     setTimeout(() => document.getElementById('ouija-frame').classList.remove('shake'), 600);
-    // ---- Cursed Cursor reacts to damage ----
-    try { if (CursedCursor) CursedCursor.onSoulLoss(Math.abs(amount)); } catch(e) {}
   }
 }
 

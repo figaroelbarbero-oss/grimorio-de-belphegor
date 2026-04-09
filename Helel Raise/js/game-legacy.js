@@ -19,9 +19,6 @@ function startGame() {
     }
   } catch(e) {}
 
-  // ---- Initialize Cursed Cursor ----
-  try { CursedCursor.init(); } catch(e) {}
-
   // ---- NG+ Inherited Objects ----
   let inheritedItems = [];
   try {
@@ -34,15 +31,10 @@ function startGame() {
     }
   } catch(e) {}
 
-  // ---- Start Perception Attacks ----
-  try { PerceptionAttack.startAttacks(); } catch(e) {}
-
   // Emit game start event for all systems
   try { GameBus.emit(GameEvents.GAME_START, { isNewGamePlus: Persistence.isNewGamePlus(), run: Persistence.getPlaythroughs() }); } catch(e) {}
 
   loadScene('intro');
-  // Start ambient horror system
-  JumpscareEngine.startAmbient();
 
   // ---- Scatter lore fragments into gameplay ----
   scheduleLoreDiscovery();
@@ -79,11 +71,11 @@ var sceneScares = {
   },
   'prisionero': () => {
     setTimeout(() => SoundDesign.doorSlam(), 500);
-    setTimeout(() => { SoundDesign.demonScream(); JumpscareEngine.fullJumpscare('mask'); }, 1500);
+    setTimeout(() => { SoundDesign.demonScream(); JumpscareEngine.videoJumpscare(); }, 1500);
   },
   'detras_de_ti': () => {
     setTimeout(() => SoundDesign.tensionRiser(), 500);
-    setTimeout(() => { SoundDesign.demonImpact(); SoundDesign.shriek(); JumpscareEngine.fullJumpscare('ghost'); }, 3800);
+    setTimeout(() => { SoundDesign.demonImpact(); SoundDesign.shriek(); JumpscareEngine.videoJumpscare(); }, 3800);
   },
   'ouija_contacto': () => {
     setTimeout(() => SoundDesign.chains(), 500);
@@ -123,7 +115,7 @@ var sceneScares = {
   },
   'pagina_arrancada': () => {
     setTimeout(() => SoundDesign.demonScream(), 500);
-    setTimeout(() => { SoundDesign.demonImpact(); JumpscareEngine.fullJumpscare('ghost'); }, 1200);
+    setTimeout(() => { SoundDesign.demonImpact(); JumpscareEngine.videoJumpscare(); }, 1200);
     setTimeout(() => SoundDesign.hellWind(), 2500);
   },
   'altar_destruido': () => {
@@ -140,7 +132,7 @@ var sceneScares = {
   'nombre_invertido': () => {
     setTimeout(() => SoundDesign.dimensionalTear(), 300);
     setTimeout(() => SoundDesign.shriek(), 1500);
-    setTimeout(() => { SoundDesign.demonScream(); JumpscareEngine.fullJumpscare('demon'); }, 2500);
+    setTimeout(() => { SoundDesign.demonScream(); JumpscareEngine.videoJumpscare(); }, 2500);
     setTimeout(() => SoundDesign.infernalChoir(), 4000);
   },
   'contra_hechizo': () => {
@@ -165,12 +157,12 @@ var sceneScares = {
   },
   'final_confrontacion': () => {
     setTimeout(() => SoundDesign.tensionRiser(), 500);
-    setTimeout(() => { SoundDesign.demonScream(); SoundDesign.demonImpact(); JumpscareEngine.fullJumpscare('demon'); }, 3800);
+    setTimeout(() => { SoundDesign.demonScream(); SoundDesign.demonImpact(); JumpscareEngine.videoJumpscare(); }, 3800);
   },
   'final_malo': () => {
     setTimeout(() => SoundDesign.deathSequence(), 300);
     setTimeout(() => JumpscareEngine.horrorSequence(), 1000);
-    setTimeout(() => SoundDesign.demonLaugh(), 5000);
+    setTimeout(() => { JumpscareEngine.videoJumpscare(); SoundDesign.demonLaugh(); }, 5000);
   },
   'final_secreto': () => {
     setTimeout(() => SoundDesign.dimensionalTear(), 500);
@@ -180,7 +172,7 @@ var sceneScares = {
   'final_guardian': () => {
     setTimeout(() => SoundDesign.chains(), 500);
     setTimeout(() => SoundDesign.infernalChoir(), 1500);
-    setTimeout(() => JumpscareEngine.fullJumpscare('ritual'), 3000);
+    setTimeout(() => JumpscareEngine.videoJumpscare(), 3000);
     setTimeout(() => SoundDesign.demonGrowl(), 4500);
   },
   'final_pacto': () => {
@@ -258,16 +250,8 @@ function loadScene(sceneId, fromRisk) {
   Persistence.recordChoice();
   Persistence.rememberMoment(sceneId);
 
-  // ---- Dynamic Backgrounds: update scene ----
-  DynamicBackgrounds.setScene(sceneId);
-
   // ---- NarrativeAI: Update player profile ----
   NarrativeAI.updateProfile(sceneId, fromRisk || 'medium');
-
-  // ---- Cursed Cursor: trigger on demon scenes ----
-  if (sceneId.includes('invocacion') || sceneId.includes('belphegor') || sceneId.includes('final_malo')) {
-    CursedCursor.onDemonScene();
-  }
 
   // ---- Lore Discovery Check ----
   if (typeof checkLoreForScene === 'function') checkLoreForScene(sceneId);
@@ -288,6 +272,9 @@ function loadScene(sceneId, fromRisk) {
 
   // Replace soul value in ending text
   let text = scene.text.replace(/\$\{.*?state\.soul.*?\}/g, state.soul);
+
+  // ---- PerspectiveEngine: Modify text for current perspective ----
+  try { text = PerspectiveEngine.modifyText(sceneId, text); } catch(e) {}
 
   // ---- NarrativeAI: Enhance the narrative text ----
   text = NarrativeAI.enhanceNarrative(sceneId, text, scene.chapter);
@@ -320,6 +307,9 @@ function loadScene(sceneId, fromRisk) {
     setTimeout(() => event.effect(), 1500);
   }
 
+  // ---- DeathOracle: Inject death prediction into endings ----
+  try { text = DeathOracle.injectIntoEnding(text); } catch(e) {}
+
   // ---- MacabreVoice: Narrate the scene ----
   if (MacabreVoice.isEnabled()) {
     MacabreVoice.narrateScene(text);
@@ -327,14 +317,21 @@ function loadScene(sceneId, fromRisk) {
 
   typewrite(narrative, text, () => {
     // Show choices after typewriter finishes
-    scene.choices.forEach((choice, i) => {
+    // PerspectiveEngine may override choices for alternate viewpoints
+    var activeChoices = scene.choices;
+    try { activeChoices = PerspectiveEngine.modifyChoices(sceneId, scene.choices); } catch(e) {}
+    activeChoices.forEach((choice, i) => {
       const btn = document.createElement('button');
       btn.className = 'choice-btn fade-in';
       btn.style.animationDelay = (i * 0.15) + 's';
       btn.style.opacity = '0';
 
+      // Resolve dynamic choice properties (may be functions for state-dependent choices)
+      const choiceText = typeof choice.text === 'function' ? choice.text() : choice.text;
+      const choiceRisk = typeof choice.risk === 'function' ? choice.risk() : choice.risk;
+
       // ---- NarrativeAI: Enhance choice text (no risk labels — blind choices) ----
-      const enhancedText = NarrativeAI.enhanceChoiceText(choice.text, choice.risk);
+      const enhancedText = NarrativeAI.enhanceChoiceText(choiceText, choiceRisk);
 
       btn.innerHTML = `<span class="choice-number">${i + 1}.</span> ${enhancedText}`;
 
@@ -349,7 +346,7 @@ function loadScene(sceneId, fromRisk) {
 
         // Check for death
         if (state.soul <= 0) {
-          loadScene('final_malo', choice.risk);
+          loadScene('final_malo', choiceRisk);
           return;
         }
 
@@ -357,7 +354,10 @@ function loadScene(sceneId, fromRisk) {
         let nextScene = choice.next;
         if (typeof nextScene === 'function') nextScene = nextScene();
 
-        loadScene(nextScene, choice.risk);
+        // Skip reload if combat engine is active (combat callback handles navigation)
+        try { if (CombatEngine.isActive()) return; } catch(e) {}
+
+        loadScene(nextScene, choiceRisk);
       });
 
       choices.appendChild(btn);

@@ -148,7 +148,8 @@ var Persistence = (() => {
 
     // Check all endings
     const allEndingIds = ['final_bueno','final_bueno_espejo','final_bueno_fuego','final_malo',
-      'final_secreto','final_guardian','final_pacto','final_escape','final_voluntad'];
+      'final_secreto','final_guardian','final_pacto','final_escape','final_voluntad',
+      'final_misericordia','final_redencion','final_secreto_blocked'];
     if (allEndingIds.every(e => d.endings[e])) unlock('all_endings');
   }
 

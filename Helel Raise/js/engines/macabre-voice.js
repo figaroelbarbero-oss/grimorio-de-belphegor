@@ -106,35 +106,27 @@ var MacabreVoice = (() => {
 
       switch (mood) {
         case 'belphegor':
-          // Abyssal, guttural
-          utterance.pitch = 0.1 + Math.random() * 0.1;
-          utterance.rate = 0.45 + Math.random() * 0.08;
-          utterance.volume = 0.9;
+          utterance.pitch = 0.01;
+          utterance.rate = 0.85;
+          utterance.volume = 0.95;
           break;
         case 'whisper':
-          // Quiet, breathy, low
-          utterance.pitch = 0.3 + Math.random() * 0.15;
-          utterance.rate = 0.6 + Math.random() * 0.1;
-          utterance.volume = 0.35;
+          utterance.pitch = 0.01;
+          utterance.rate = 0.8;
+          utterance.volume = 0.3;
           break;
         case 'scream':
-          // Distorted roar (lower than before)
-          utterance.pitch = 0.8 + Math.random() * 0.3;
-          utterance.rate = 1.2;
+          utterance.pitch = 0.01;
+          utterance.rate = 1.05;
           utterance.volume = 1.0;
           break;
         case 'narrator':
         default:
-          // Deep gravelly narrator — much lower pitch
-          utterance.pitch = 0.15 + Math.random() * 0.1;
-          utterance.rate = 0.55 + Math.random() * 0.08;
-          utterance.volume = 0.9;
+          utterance.pitch = 0.01;
+          utterance.rate = 0.9;
+          utterance.volume = 0.95;
           break;
       }
-
-      // Random micro-variations for uncanny effect
-      utterance.pitch += (Math.random() - 0.5) * 0.05;
-      utterance.rate += (Math.random() - 0.5) * 0.03;
 
       utterance.onend = () => {
         speaking = false;

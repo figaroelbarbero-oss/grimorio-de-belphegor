@@ -23,12 +23,12 @@ body {
   cursor: default;
 }
 
-/* Canvas backgrounds */
+/* Canvas backgrounds — behind photo layer */
 #bg-canvas {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 }
 
@@ -279,6 +279,49 @@ body {
   color: var(--bone);
   letter-spacing: 1px;
   animation: fadeIn 0.5s ease;
+}
+
+/* Scene illustration — real photos inside the game area */
+#scene-illustration {
+  width: 100%;
+  height: 0;
+  max-height: 250px;
+  overflow: hidden;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  position: relative;
+  transition: height 1.5s cubic-bezier(0.2, 0, 0.3, 1);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#scene-illustration.active {
+  height: 200px;
+}
+
+#scene-illustration::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(10,5,15,0.98), rgba(10,5,15,0.4), transparent);
+  pointer-events: none;
+}
+
+#scene-illustration::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.06) 0px,
+    rgba(0,0,0,0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Narrative text */
@@ -1010,4 +1053,260 @@ body {
   #clock-time { font-size: 0.75rem; }
   .inv-grid { grid-template-columns: repeat(2, 1fr); }
   #ouija-frame { max-height: calc(90vh - 44px); }
+}
+
+/* ====== MEDIA ENGINE: Photo Backgrounds & Video Overlays ====== */
+
+/* Background image layer — ABOVE canvas gradient, below game content */
+#media-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 2.5s ease, filter 2s ease;
+  pointer-events: none;
+}
+
+#media-bg.media-revealing {
+  transition: opacity 3s cubic-bezier(0.2, 0, 0.3, 1), filter 2s ease;
+}
+
+#media-bg.media-fading {
+  transition: opacity 1.5s ease-out;
+}
+
+/* Corrupted pulsing at low soul */
+#media-bg.media-corrupted {
+  animation: mediaCorruptPulse 4s ease-in-out infinite;
+}
+
+@keyframes mediaCorruptPulse {
+  0%, 100% {
+    filter: brightness(0.15) contrast(2.0) saturate(0.2) sepia(0.1);
+    transform: scale(1);
+  }
+  25% {
+    filter: brightness(0.2) contrast(2.5) saturate(0.4) sepia(0) hue-rotate(-15deg);
+    transform: scale(1.02);
+  }
+  50% {
+    filter: brightness(0.12) contrast(2.2) saturate(0.15) sepia(0.15);
+    transform: scale(1);
+  }
+  75% {
+    filter: brightness(0.22) contrast(2.8) saturate(0.5) sepia(0) hue-rotate(10deg);
+    transform: scale(1.01);
+  }
+}
+
+/* Grain overlay effect on the background (via pseudo-element) */
+#media-bg::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.03) 0px,
+    rgba(0,0,0,0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  animation: grainShift 0.4s steps(4) infinite;
+  opacity: 0.6;
+}
+
+@keyframes grainShift {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-1px); }
+  50% { transform: translateY(1px); }
+  75% { transform: translateY(-0.5px); }
+  100% { transform: translateY(0); }
+}
+
+/* Video overlay layer */
+#video-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 9990;
+  pointer-events: none;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: black;
+  overflow: hidden;
+}
+
+#video-overlay video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Video modes */
+#video-overlay.video-jumpscare {
+  transition: opacity 0.05s ease;
+  z-index: 9999;
+  pointer-events: all;
+}
+
+#video-overlay.video-atmospheric {
+  transition: opacity 2s ease;
+  z-index: 2;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+#video-overlay.video-subliminal {
+  transition: opacity 0.03s ease;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* Subliminal photo flash (temporary element) */
+.media-subliminal-flash {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 9997;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+
+/* Slow Ken Burns drift on background images for unease */
+@keyframes kenBurnsDrift {
+  0% { transform: scale(1.0) translate(0, 0); }
+  25% { transform: scale(1.05) translate(-1%, 0.5%); }
+  50% { transform: scale(1.02) translate(0.5%, -0.5%); }
+  75% { transform: scale(1.06) translate(-0.5%, 1%); }
+  100% { transform: scale(1.0) translate(0, 0); }
+}
+
+#media-bg {
+  animation: kenBurnsDrift 30s ease-in-out infinite;
+}
+
+/* When corrupted, Ken Burns gets jittery */
+#media-bg.media-corrupted {
+  animation: mediaCorruptPulse 4s ease-in-out infinite, kenBurnsCorrupt 8s ease-in-out infinite;
+}
+
+@keyframes kenBurnsCorrupt {
+  0%, 100% { transform: scale(1.0) translate(0, 0) skew(0deg); }
+  15% { transform: scale(1.06) translate(-1.5%, 1%) skew(0.3deg); }
+  30% { transform: scale(1.02) translate(1%, -1%) skew(-0.2deg); }
+  50% { transform: scale(1.08) translate(-0.5%, 0.5%) skew(0.5deg); }
+  70% { transform: scale(1.03) translate(0.8%, -0.8%) skew(-0.4deg); }
+  85% { transform: scale(1.05) translate(-1%, 0.3%) skew(0.2deg); }
+}
+
+/* ====== DEATH ORACLE ====== */
+.death-oracle {
+  margin-top: 30px;
+  padding: 25px;
+  background: radial-gradient(ellipse at center, rgba(20,0,5,0.95) 0%, rgba(5,0,2,0.98) 100%);
+  border: 1px solid rgba(139,0,0,0.4);
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(139,0,0,0.2), inset 0 0 60px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.death-oracle::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(139,0,0,0.03) 2px,
+    rgba(139,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  animation: oracleScanlines 8s linear infinite;
+}
+
+@keyframes oracleScanlines {
+  from { transform: translateY(0); }
+  to { transform: translateY(4px); }
+}
+
+.oracle-header {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1rem;
+  color: var(--blood-bright);
+  letter-spacing: 4px;
+  text-align: center;
+  text-shadow: 0 0 15px var(--blood), 0 0 30px rgba(139,0,0,0.3);
+  margin-bottom: 5px;
+  animation: oracleFlicker 3s infinite alternate;
+}
+
+@keyframes oracleFlicker {
+  0%, 85%, 100% { opacity: 1; }
+  87% { opacity: 0.4; }
+  89% { opacity: 1; }
+  91% { opacity: 0.6; }
+  93% { opacity: 1; }
+  95% { opacity: 0.3; transform: skewX(2deg); }
+  97% { opacity: 1; transform: skewX(0); }
+}
+
+.oracle-subtitle {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 0.7rem;
+  color: rgba(201,168,76,0.5);
+  text-align: center;
+  letter-spacing: 3px;
+  margin-bottom: 15px;
+}
+
+.oracle-divider {
+  text-align: center;
+  color: rgba(139,0,0,0.3);
+  letter-spacing: 5px;
+  margin-bottom: 15px;
+  font-size: 0.7rem;
+}
+
+.oracle-line {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 0.85rem;
+  color: var(--bone);
+  line-height: 1.8;
+  margin-bottom: 12px;
+  opacity: 0;
+  animation: oracleReveal 1.5s ease forwards;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+@keyframes oracleReveal {
+  0% { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+  100% { opacity: 0.85; transform: translateY(0); filter: blur(0); }
+}
+
+.oracle-seal {
+  text-align: center;
+  font-size: 2rem;
+  color: var(--blood);
+  opacity: 0.15;
+  margin-top: 15px;
+  animation: oracleSealPulse 4s ease-in-out infinite;
+}
+
+@keyframes oracleSealPulse {
+  0%, 100% { opacity: 0.1; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.25; transform: scale(1.1) rotate(5deg); }
 }

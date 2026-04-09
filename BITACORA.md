@@ -112,11 +112,124 @@ Atajos: M=mapa, S=stats, I=inventario, Esc=cerrar
 
 ### Fase 4 — Contenido
 - [ ] **SCENE-WRITER**: Adaptar 40+ escenas a nuevos sistemas, agregar 20-30 nuevas
-- [ ] **PERSPECTIVE-ENGINE**: Jugar como Belphegor o Elena la Guardiana
+- [x] **PERSPECTIVE-ENGINE**: Jugar como Belphegor o Elena la Guardiana
 
-### Fase 5 — Polish
-- [ ] **ART-ENGINE**: Ilustraciones procedurales con canvas
-- [ ] **SOUND-DIRECTOR**: Soundtrack reactiva que cambia segun mood de Belphegor
+### Fase 5 — Polish (ver Sesion 2 abajo)
+
+---
+
+## SESION 2 — 2026-04-09
+
+### Bug Fix: Juego no arrancaba
+- **Causa raiz**: `scenes.js` se cargaba antes que `game-state-legacy.js`, pero varias escenas usaban `state.flags.trueName`, `state.inventory.includes(...)` etc. como valores directos en el objeto (no dentro de callbacks). Al parsear el archivo, `state` no existia aun → `ReferenceError: state is not defined`
+- **Fix**: Convertir todas las referencias a `state` en propiedades `text`, `risk` y `next` de choices a funciones lazy `() => state.flags.trueName ? "..." : "..."`. Actualizar `loadScene` para resolver funciones en `text`, `risk` y `next`
+- **Segundo error cascada**: `scenes` quedaba `undefined` porque el script fallaba, causando `Cannot read properties of undefined (reading 'intro')` en `loadScene`
+- **Diagnostico**: `window.onerror` overlay inyectado en index.html
+
+### MediaEngine — Fondos fotograficos y Videos
+- **5 imagenes** organizadas en `media/` con nombres semanticos
+  - `ritual_goats.jpg` → escenas de Belphegor/ritual
+  - `carnival_mask.jpg` → cocina, prisionero, liminal
+  - `deer_cult.jpg` → jardin, invocacion, ceremonias
+  - `rabbit_followers.jpg` → vestibulo, escalera, intro
+  - `skull_nun.jpg` → finales, grimorio, espejos
+- **3 videos** comprimidos de ~3.9MB a ~130KB (480p, CRF 32, sin audio)
+  - `jumpscare_animation.mp4`, `jumpscare_goat.mp4`, `suffering_tree.mp4`
+- **Filtros CSS horror** dinamicos que empeoran con soul baja (brightness, contrast, saturate, sepia, hue-rotate)
+- **Ken Burns drift** + grano filmico CSS animado
+- **3 modos de video**: jumpscare (fullscreen 0.05s), atmospheric (semi-transparente blend screen), subliminal (flash 80-200ms)
+- **30+ escenas** mapeadas a imagenes, **13 escenas** con trigger de video
+- JumpscareEngine actualizado: `photoJumpscare()`, `videoJumpscare()`, `horrorSequence()` ahora mezcla video real 50%
+- Ambient scares mezclan fotos/videos subliminales con procedurales
+
+### Fase 3 — 3 Sistemas de Interaccion
+
+| Sistema | Archivo | Descripcion |
+|---|---|---|
+| **CombatEngine** | combat-engine.js | Pentagrama giratorio con sigilos de timing. Click en sigilos = carga ritual. Combo system. 5 enemigos (shadow→belphegor_true). Corrupcion visual progresiva. |
+| **SpellSystem** | spell-system.js | 6 hechizos trazables con mouse (circulo, triangulo, zigzag, espiral, infinito, pentagrama). Pattern matching con resampling. Backfire en baja precision. Cooldowns. |
+| **BelphegorAI** | belphegor-ai.js | Relacion bidireccional (-100 a +100). 8 moods con transiciones. Dialogo estilo Disco Elysium (voz interna). Micro-pactos con accept/reject. Reacciones a choices/soul/escenas. |
+
+### Combat Engine — Detalles
+- Pentagrama gira a velocidad creciente segun enemy.speed
+- 5 puntos de sigilo con countdown visual (ring timer)
+- Sweet spot timing (40-70% vida del sigilo) = PERFECTO (x1.6 carga)
+- Combo multiplier: +2 carga por combo consecutivo
+- 5 enemigos: Sombra Menor, Mano del Abismo, Tu Doble Oscuro, Fragmento de Belphegor, BELPHEGOR
+- Patrones de spawn: simple, alternating, mirror, chaos (multi-sigil), boss (2-3 sigils)
+- Corrupcion visual crece durante el combate (venas, colores)
+
+### Spell System — Hechizos
+| Hechizo | Patron | Costo | Efecto |
+|---|---|---|---|
+| Escudo de Sangre | Circulo | 8 alma | Barrera absorbe proximo ataque |
+| Fuego Negro | Triangulo invertido | 12 alma | Dano directo (15-40) |
+| Cadenas del Purgatorio | Zigzag | 10 alma | Stun enemigo 2-5s |
+| Ojo Interior | Espiral | 6 alma | Revela secretos y debilidades |
+| Inversion del Nombre | Infinito | 15 alma | Potencia ROGEHPLEB |
+| Sello de Destierro | Pentagrama | 25 alma | Destierro (requiere >70% precision) |
+
+### Belphegor AI — Relacion
+- **Metricas**: score (-100/+100), respect, fear, curiosity, trust
+- **8 moods**: curious, amused, angry, hungry, respectful, afraid, desperate, bored
+- **Dialogos contextuales**: greetings por mood, reacciones a risk (safe/high/fatal), comentarios de soul damage
+- **Micro-pactos**: 5 templates (vision, strength, knowledge, protection, shortcut) con reward/cost/betrayalCost
+- **UI**: Overlay flotante con icono de mood, nombre, texto, botones de eleccion para pactos
+- **Atajos**: G=grimorio de hechizos, Esc cierra todo
+
+### HUD actualizado
+```
+[🕐 1:00] [🗺️ Mapa] [📜 Alma] [🎒 Objetos] [🔮 Hechizos]
+Atajos: M=mapa, S=stats, I=inventario, G=grimorio, Esc=cerrar
+```
+
+### Auditoria de errores — 30 issues, 7 fixes
+- SOUL_CHANGED nunca se emitia → ahora changeSoul() emite el evento
+- Typo activePost vs activePact → corregido
+- Inicializaciones duplicadas en startGame() → removidas (init.js las maneja via GAME_START)
+- DynamicBackgrounds.setScene() y CursedCursor duplicados → removidos de game-legacy.js
+- INVENTORY_CHANGED nunca se emitia → ahora addItem/removeItem emiten
+- Global ctx en particles.js → renombrado a particleCtx
+- Combat overlay sin boton de escape → agregado boton HUIR
+
+### Fase 4 — Contenido (COMPLETADA)
+
+#### PerspectiveEngine
+- 3 perspectivas: Humano, Belphegor, Elena la Guardiana
+- Overlays narrativos para 7+ escenas clave
+- Filtros visuales y soul label por perspectiva
+- Selector en pantalla de titulo
+
+#### 15+ nuevas escenas
+- Sotano completo (altar obsidiana, pozo abismo, ojo del abismo, vision)
+- 4 combates rituales (sombra, altar, doble, BELPHEGOR)
+- Post-combat rewards y decision trees
+- 2 nuevos finales (misericordia, redencion)
+
+### Fase 5 — Polish (COMPLETADA)
+
+#### ArtEngine (art-engine.js)
+- Ojo procedural que sigue el cursor (iris cambia con mood, pupila dilata con soul, lagrima de sangre)
+- Manos que emergen de bordes a soul < 40
+- Sigilos ardientes flotantes a soul < 60
+- Venas de corrupcion crecientes a soul < 70
+- Niebla, respiracion de pantalla, vineta roja pulsante
+
+#### SoundDirector (sound-director.js)
+- 5 capas audio procedural (drone, pad, textura, pulso, melodia)
+- Reactivo a mood de Belphegor, tipo de escena, y nivel de soul
+- Transiciones suaves de 3 segundos entre estados
+
+#### DeathOracle (death-oracle.js)
+- Profecia de muerte personalizada en cada final
+- 24 predicciones × 10 flags × 6 tiempos × 4 relaciones
+
+---
+
+## ESTADISTICAS FINALES
+- **37 archivos** JS | **12,047 lineas** | **66 escenas** | **12 finales**
+- **32 engines** | **5 capas audio** | **3 perspectivas** | **6 hechizos** | **5 enemigos**
+- **5 fotos** + **3 videos** | **1 ojo que te observa**
 
 ---
 

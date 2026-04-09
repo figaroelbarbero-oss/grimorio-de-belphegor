@@ -1,6 +1,6 @@
 // ====== PARTICLE CANVAS ======
 var particleCanvas = document.getElementById('particle-canvas');
-var ctx = particleCanvas.getContext('2d');
+var particleCtx = particleCanvas.getContext('2d');
 var particles = [];
 var bloodDrops = [];
 
@@ -31,16 +31,16 @@ class Particle {
     if (this.y < 0 || this.opacity <= 0) this.reset();
   }
   draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${this.color},${this.opacity})`;
-    ctx.fill();
+    particleCtx.beginPath();
+    particleCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    particleCtx.fillStyle = `rgba(${this.color},${this.opacity})`;
+    particleCtx.fill();
     // Glow via larger transparent circle (cheaper than shadowBlur per frame)
     if (this.opacity > 0.2) {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${this.color},${this.opacity * 0.12})`;
-      ctx.fill();
+      particleCtx.beginPath();
+      particleCtx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+      particleCtx.fillStyle = `rgba(${this.color},${this.opacity * 0.12})`;
+      particleCtx.fill();
     }
   }
 }
@@ -62,10 +62,10 @@ class BloodDrop {
     if (this.y > particleCanvas.height) this.reset();
   }
   draw() {
-    ctx.beginPath();
-    ctx.ellipse(this.x, this.y, this.size * 0.6, this.size, 0, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(120,0,0,${this.opacity})`;
-    ctx.fill();
+    particleCtx.beginPath();
+    particleCtx.ellipse(this.x, this.y, this.size * 0.6, this.size, 0, 0, Math.PI * 2);
+    particleCtx.fillStyle = `rgba(120,0,0,${this.opacity})`;
+    particleCtx.fill();
   }
 }
 
@@ -73,11 +73,11 @@ for (let i = 0; i < 60; i++) particles.push(new Particle());
 for (let i = 0; i < 15; i++) bloodDrops.push(new BloodDrop());
 
 function animateParticles() {
-  ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
 
   // Fog effect
-  ctx.fillStyle = 'rgba(5,2,8,0.02)';
-  ctx.fillRect(0, 0, particleCanvas.width, particleCanvas.height);
+  particleCtx.fillStyle = 'rgba(5,2,8,0.02)';
+  particleCtx.fillRect(0, 0, particleCanvas.width, particleCanvas.height);
 
   particles.forEach(p => { p.update(); p.draw(); });
   bloodDrops.forEach(d => { d.update(); d.draw(); });

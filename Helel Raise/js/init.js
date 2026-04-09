@@ -45,6 +45,12 @@
     if (delta < 0) {
       try { CursedCursor.onSoulLoss(Math.abs(delta)); } catch(e) {}
     }
+
+    // Media Engine: update horror filters based on soul level
+    try { MediaEngine.updateFilters(soul); } catch(e) {}
+
+    // Belphegor AI: react to soul changes
+    try { BelphegorAI.onSoulChange(soul, delta); } catch(e) {}
   });
 
   // ---- Wire Damage Flash ----
@@ -139,11 +145,22 @@
     try { HeartbeatSync.stopSync(); } catch(e) {}
     try { PerceptionAttack.stopAttacks(); } catch(e) {}
 
+    // Media Engine cleanup
+    try { MediaEngine.destroy(); } catch(e) {}
+
     // Phase 2 cleanup
     try { MapEngine.hide(); } catch(e) {}
     try { StatsUI.hide(); } catch(e) {}
     try { InventorySystem.hide(); } catch(e) {}
     try { ClockEngine.reset(); } catch(e) {}
+
+    // Phase 3 cleanup
+    try { SpellSystem.hide(); } catch(e) {}
+    try { BelphegorAI.dismissDialogue(); } catch(e) {}
+
+    // Phase 5 cleanup
+    try { ArtEngine.destroy(); } catch(e) {}
+    try { SoundDirector.stop(); } catch(e) {}
     const hud = document.getElementById('hud-bar');
     if (hud) hud.classList.remove('active');
   });
@@ -153,6 +170,13 @@
     try { CursedCursor.init(); } catch(e) {}
     try { PerceptionAttack.startAttacks(); } catch(e) {}
     try { JumpscareEngine.startAmbient(); } catch(e) {}
+
+    // Media Engine: init photo backgrounds + video system
+    try { MediaEngine.init(); } catch(e) {}
+
+    // Phase 5: Art Engine + Sound Director
+    try { ArtEngine.init(); } catch(e) {}
+    try { SoundDirector.start(); } catch(e) {}
 
     // Phase 2: Initialize RPG systems
     try { MapEngine.init(); } catch(e) {}
@@ -166,11 +190,34 @@
 
   // ---- Wire Scene Load to Phase 2 systems ----
   Bus.on(E.SCENE_LOAD, ({ sceneId, fromRisk }) => {
+    // Media Engine: set scene background photo + trigger videos
+    try {
+      var soul = (typeof state !== 'undefined' && state.soul) ? state.soul : 100;
+      MediaEngine.setScene(sceneId, soul);
+    } catch(e) {}
+
     // Map: discover room from scene visit
     try { MapEngine.discoverFromScene(sceneId); } catch(e) {}
 
     // Clock: advance time based on choice risk
     try { ClockEngine.advance(fromRisk || 'medium'); } catch(e) {}
+
+    // Art Engine: procedural illustrations react to scene
+    try {
+      var sceneThemeMap = { intro:'house', vestibulo:'house', cocina:'kitchen', biblioteca:'library',
+        sala_ritual:'ritual', invocacion:'ritual', espejo:'mirror', jardin:'garden',
+        final_confrontacion:'fire', final_malo:'death', final_secreto:'ascend',
+        quemar_grimorio:'fire', sotano:'void', combate_sombra:'death', combate_belphegor:'death' };
+      var artType = sceneThemeMap[sceneId] || 'void';
+      ArtEngine.onSceneChange(sceneId, artType);
+      SoundDirector.setScene(artType);
+    } catch(e) {}
+
+    // Belphegor AI: scene greeting + pact offers
+    try { BelphegorAI.onSceneEnter(sceneId); } catch(e) {}
+
+    // Belphegor AI: react to choice risk
+    try { BelphegorAI.onChoice(fromRisk || 'medium'); } catch(e) {}
 
     // Check for forced clock events
     try {
@@ -198,10 +245,12 @@
     if (e.key.toLowerCase() === 'm') { try { MapEngine.toggle(); } catch(ex) {} }
     if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey) { try { StatsUI.toggle(); } catch(ex) {} }
     if (e.key.toLowerCase() === 'i') { try { InventorySystem.toggle(); } catch(ex) {} }
+    if (e.key.toLowerCase() === 'g') { try { SpellSystem.toggle(); } catch(ex) {} }
     if (e.key === 'Escape') {
       try { MapEngine.hide(); } catch(ex) {}
       try { StatsUI.hide(); } catch(ex) {}
       try { InventorySystem.hide(); } catch(ex) {}
+      try { SpellSystem.hide(); } catch(ex) {}
     }
   });
 

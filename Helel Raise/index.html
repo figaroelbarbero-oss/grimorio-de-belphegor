@@ -60,7 +60,8 @@
       1 2 3 4 5 6 7 8 9 0
     </div>
     <button id="start-btn" onclick="startGame()">⛧ ABRIR EL GRIMORIO ⛧</button>
-    <p style="margin-top: 30px; font-size: 0.65rem; opacity: 0.3; letter-spacing: 2px;">
+    <button id="perspective-btn" onclick="try{PerspectiveEngine.showSelectionScreen()}catch(e){}" style="background:transparent;border:1px solid rgba(201,168,76,0.3);color:rgba(201,168,76,0.6);font-family:'Cinzel',serif;font-size:0.7rem;padding:8px 20px;cursor:pointer;letter-spacing:3px;margin-top:15px;transition:all 0.3s ease;">👁️ PERSPECTIVA</button>
+    <p style="margin-top: 20px; font-size: 0.65rem; opacity: 0.3; letter-spacing: 2px;">
       ADIÓS · GOODBYE · VALE
     </p>
   </div>
@@ -90,6 +91,7 @@
       <div id="inventory"></div>
     </div>
 
+    <div id="scene-illustration"></div>
     <div id="narrative"></div>
     <div id="choices"></div>
   </div>
@@ -104,6 +106,7 @@
   <button class="hud-btn" onclick="MapEngine.toggle()"><span class="hud-icon">🗺️</span> Mapa</button>
   <button class="hud-btn" onclick="StatsUI.toggle()"><span class="hud-icon">📜</span> Alma</button>
   <button class="hud-btn" onclick="InventorySystem.toggle()"><span class="hud-icon">🎒</span> Objetos</button>
+  <button class="hud-btn" onclick="SpellSystem.toggle()"><span class="hud-icon">🔮</span> Hechizos</button>
 </div>
 
 <!-- ====== OVERLAY PANELS ====== -->
@@ -122,7 +125,23 @@
   <div id="inventory-panel"></div>
 </div>
 
+<div id="combat-overlay" class="overlay-panel" style="z-index:450;">
+  <button class="overlay-close" onclick="try{CombatEngine.end(false)}catch(e){}">✕ HUIR</button>
+  <canvas id="combat-canvas"></canvas>
+</div>
+
 <!-- ====== ENGINE SCRIPTS (load order matters) ====== -->
+
+<!-- 0. Error Diagnostics (must be VERY first) -->
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  document.title = 'ERROR: ' + msg;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#200;color:#f88;padding:10px;font:12px monospace;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+  d.textContent = 'ERROR linea ' + line + ' en ' + (src||'?') + ':\n' + msg + '\n' + (err && err.stack ? err.stack : '');
+  document.body.appendChild(d);
+};
+</script>
 
 <!-- 1. Core: Event Bus (must be first) -->
 <script src="js/game-bus-global.js"></script>
@@ -134,6 +153,7 @@
 <!-- 3. Visual Engines -->
 <script src="js/engines/particles.js"></script>
 <script src="js/engines/dynamic-bg.js"></script>
+<script src="js/engines/media-engine.js"></script>
 <script src="js/engines/cursed-cursor.js"></script>
 <script src="js/engines/jumpscare.js"></script>
 
@@ -160,6 +180,19 @@
 <script src="js/engines/stats-ui.js"></script>
 <script src="js/engines/inventory-system.js"></script>
 <script src="js/engines/clock-engine.js"></script>
+
+<!-- 6c. Phase 3 Interaction Systems -->
+<script src="js/engines/combat-engine.js"></script>
+<script src="js/engines/spell-system.js"></script>
+<script src="js/engines/belphegor-ai.js"></script>
+
+<!-- 6d. Phase 4 Content Systems -->
+<script src="js/engines/perspective-engine.js"></script>
+<script src="js/engines/death-oracle.js"></script>
+
+<!-- 6e. Phase 5 Polish -->
+<script src="js/engines/art-engine.js"></script>
+<script src="js/engines/sound-director.js"></script>
 
 <!-- 7. Data -->
 <script src="js/data/lore.js"></script>

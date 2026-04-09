@@ -80,10 +80,15 @@ var scenes = {
 
   cocina_oscura: {
     chapter: "Capítulo II — La Casa que Respira",
-    text: `Con tu visión oscura, la cocina se revela en capas. Ves lo que es ahora: mugre, abandono, muerte. Pero también ves lo que <span class="highlight">fue</span>: un altar de preparación donde se <span class="highlight">desollaban las ofrendas</span>. Las manchas del suelo no son grasa — son años de sangre acumulada.<br><br>Tu nueva percepción te muestra algo más: bajo el suelo, <span class="gold">un sótano</span>. Y en ese sótano, algo <span class="highlight">late</span>. Rítmico. Antiguo. Hambriento.`,
+    text: `La cocina se ve diferente con tu <span class="gold">visión oscura</span>. Puedes ver las líneas de poder que cruzan la casa como venas luminosas. Las manchas del suelo no son grasa — son años de <span class="highlight">sangre acumulada</span>. La masa negra en el plato <span class="highlight">late</span> — es un corazón. Un corazón que alimenta algo bajo el suelo.<br><br>En la pared, donde antes solo veías manchas, ahora lees un <span class="gold">hechizo grabado en la piedra</span>. Es antiguo — anterior a Belphegor. Un hechizo de <span class="highlight">protección</span>.<br><br>Tu nueva percepción te muestra algo más: bajo el suelo, <span class="gold">un sótano</span>. Y en ese sótano, algo <span class="highlight">late</span>. Rítmico. Antiguo. Hambriento.`,
     choices: [
+      { text: "Trazar el hechizo de protección (abrir Grimorio)", risk: "medium", next: "vestibulo", effect: () => {
+        try { SpellSystem.show(); } catch(e) {}
+        addItem("🛡️ Hechizo aprendido: Protección");
+      }},
       { text: "Buscar la entrada al sótano", risk: "high", next: "sotano", effect: () => { changeSoul(-15); }},
-      { text: "Ir al vestíbulo — necesitas más información primero", risk: "safe", next: "vestibulo", effect: () => {} }
+      { text: "Tomar el corazón negro del plato", risk: "fatal", next: "masa_negra", effect: () => { changeSoul(-25); addItem("🖤 Corazón de la casa"); try { state.flags.hasHeart = true; } catch(e) {} }},
+      { text: "Ir al vestíbulo", risk: "safe", next: "vestibulo", effect: () => {} },
     ]
   },
 
@@ -196,6 +201,7 @@ var scenes = {
       { text: "Entrar por la puerta del espejo roto", risk: "medium", next: "espejo", effect: () => { changeSoul(-10); }},
       { text: "Mirar por el ojo de cerradura dorado", risk: "safe", next: "cerradura", effect: () => { state.flags.peeked = true; }},
       { text: "Abrir la puerta con las marcas de uñas", risk: "fatal", next: "prisionero", effect: () => { changeSoul(-25); playHorrorSting(); }},
+      { text: "Descender al sótano — las escaleras siguen bajando", risk: "high", next: "sotano", effect: () => { changeSoul(-5); }},
     ]
   },
 
@@ -205,6 +211,7 @@ var scenes = {
     choices: [
       { text: "Bajar por el pasadizo en espiral", risk: "high", next: "sala_ritual", effect: () => { changeSoul(-10); }},
       { text: "Romper el último espejo para liberar al reflejo", risk: "medium", next: "reflejo_libre", effect: () => { changeSoul(-10); addItem("🪞 Fragmento de espejo"); state.flags.mirrorFree = true; }},
+      { text: "Enfrentar a tu reflejo en combate ritual", risk: "fatal", next: "combate_doble", effect: () => { changeSoul(-5); }},
     ]
   },
 
@@ -263,7 +270,7 @@ var scenes = {
     choices: [
       { text: "Aceptar el pacto — pronunciar las palabras", risk: "fatal", next: "invocacion", effect: () => { changeSoul(-25); state.flags.pactAccepted = true; }},
       { text: "Arrancar la página del pacto", risk: "high", next: "pagina_arrancada", effect: () => { changeSoul(-20); }},
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB — el nombre al revés" : "Escupir sobre la firma", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "nombre_invertido" : "invocacion", effect: () => { changeSoul(state.flags.trueName ? -5 : -25); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB — el nombre al revés" : "Escupir sobre la firma", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "nombre_invertido" : "invocacion", effect: () => { changeSoul(state.flags.trueName ? -5 : -25); }},
     ]
   },
 
@@ -273,7 +280,7 @@ var scenes = {
     choices: [
       { text: "Ir a buscar un espejo roto arriba", risk: "medium", next: "espejo", effect: () => { state.flags.needsMirror = true; addItem("📖 Hechizo de Espejo Oscuro"); }},
       { text: "Leer el hechizo de invocación original — enfrentarlo directamente", risk: "fatal", next: "invocacion", effect: () => { changeSoul(-20); }},
-      { text: state.inventory.includes("🪞 Fragmento de espejo") ? "¡Ya tienes un fragmento! Preparar el Hechizo de Espejo Oscuro" : "Buscar en la sala algo reflectante", risk: "medium", next: state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "sala_ritual", effect: () => { changeSoul(-5); }},
+      { text: () => state.inventory.includes("🪞 Fragmento de espejo") ? "¡Ya tienes un fragmento! Preparar el Hechizo de Espejo Oscuro" : "Buscar en la sala algo reflectante", risk: "medium", next: () => state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "sala_ritual", effect: () => { changeSoul(-5); }},
     ]
   },
 
@@ -299,9 +306,10 @@ var scenes = {
     chapter: "Capítulo VI — La Invocación",
     text: `Las palabras salen de tu boca antes de que tu mente las procese. No las lees — <span class="highlight">ellas te leen a ti</span>. Tu voz se duplica, se triplica. Suenan voces que no son tuyas hablando en lenguas que la humanidad olvidó.<br><br>El pentagrama del suelo se enciende en <span class="highlight">fuego negro</span> — llamas que absorben la luz en lugar de emitirla. La temperatura cae hasta que puedes ver tu aliento cristalizarse y caer como nieve roja.<br><br>Del centro del pentagrama, la realidad se <span class="highlight">rasga como tela</span>. Una mano emerge — inmensa, negra como el vacío, con dedos terminados en garras que gotean una sustancia que disuelve el suelo.<br><br><span class="gold">BELPHEGOR</span> se levanta. Es más grande que la sala. Se pliega sobre sí mismo para caber. Su rostro es una <span class="highlight">máscara de cráneos fundidos</span>, y sus ojos son soles muertos, amarillos y hambrientos.<br><br><span class="whisper">"Por fin. Hueles... exquisito."</span>`,
     choices: [
-      { text: state.flags.trueName ? "Gritar: ¡ROGEHPLEB! — Su nombre invertido" : "Ofrecerle tu alma a cambio de poder", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "nombre_invertido" : "final_malo", effect: () => { changeSoul(state.flags.trueName ? -5 : -40); }},
-      { text: state.inventory.includes("🪞 Fragmento de espejo") ? "Activar el Hechizo de Espejo Oscuro con el fragmento" : "Intentar cerrar el portal con tu cuerpo", risk: state.inventory.includes("🪞 Fragmento de espejo") ? "high" : "fatal", next: state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "final_malo", effect: () => { changeSoul(state.inventory.includes("🪞 Fragmento de espejo") ? -15 : -40); }},
-      { text: state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "Usar tu protección para resistir su poder" : "Correr hacia la puerta", risk: "high", next: state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "resistencia" : "final_malo", effect: () => { changeSoul(-15); }},
+      { text: () => state.flags.trueName ? "Gritar: ¡ROGEHPLEB! — Su nombre invertido" : "Ofrecerle tu alma a cambio de poder", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "nombre_invertido" : "final_malo", effect: () => { changeSoul(state.flags.trueName ? -5 : -40); }},
+      { text: () => state.inventory.includes("🪞 Fragmento de espejo") ? "Activar el Hechizo de Espejo Oscuro con el fragmento" : "Intentar cerrar el portal con tu cuerpo", risk: () => state.inventory.includes("🪞 Fragmento de espejo") ? "high" : "fatal", next: () => state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "final_malo", effect: () => { changeSoul(state.inventory.includes("🪞 Fragmento de espejo") ? -15 : -40); }},
+      { text: () => (state.flags.sigil || state.inventory.includes("🛡️ Protección espectral")) ? "Usar tu protección para resistir su poder" : "Correr hacia la puerta", risk: "high", next: () => (state.flags.sigil || state.inventory.includes("🛡️ Protección espectral")) ? "resistencia" : "final_malo", effect: () => { changeSoul(-15); }},
+      { text: "⛧ Combate ritual directo contra Belphegor ⛧", risk: "fatal", next: "combate_belphegor", effect: () => { changeSoul(-10); }},
     ]
   },
 
@@ -355,7 +363,7 @@ var scenes = {
     choices: [
       { text: "Negociar: pedir conocimiento a cambio de un favor futuro", risk: "high", next: "final_pacto", effect: () => { changeSoul(-20); }},
       { text: "Rechazar el trato y salir mientras está atrapado", risk: "safe", next: "final_bueno", effect: () => {} },
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB para destruirlo dentro de la trampa" : "Sellar el pentagrama permanentemente con tu sangre", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "final_secreto" : "final_guardian", effect: () => { changeSoul(state.flags.trueName ? -5 : -30); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB para destruirlo dentro de la trampa" : "Sellar el pentagrama permanentemente con tu sangre", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "final_secreto" : "final_guardian", effect: () => { changeSoul(state.flags.trueName ? -5 : -30); }},
     ]
   },
 
@@ -363,7 +371,7 @@ var scenes = {
     chapter: "Capítulo VII — El Juicio",
     text: `Tu protección brilla — el sigilo, la protección espectral, lo que tengas. Belphegor retrocede un paso. <span class="highlight">Un solo paso</span>. Pero es suficiente.<br><br><span class="whisper">"Interesante. Tienes amigos en los lugares correctos. O los tenías."</span><br><br>El demonio no puede poseerte directamente. Pero la casa es suya, y comienza a <span class="highlight">contraerse</span>. Las paredes se acercan. El techo baja. El suelo se inclina hacia el pentagrama como un embudo de carne y piedra.`,
     choices: [
-      { text: state.flags.trueName ? "Gritar ROGEHPLEB ahora que no puede tocarte" : "Correr hacia la puerta antes de que la casa te aplaste", risk: state.flags.trueName ? "medium" : "high", next: state.flags.trueName ? "nombre_invertido" : "final_escape", effect: () => { changeSoul(state.flags.trueName ? -5 : -15); }},
+      { text: () => state.flags.trueName ? "Gritar ROGEHPLEB ahora que no puede tocarte" : "Correr hacia la puerta antes de que la casa te aplaste", risk: () => state.flags.trueName ? "medium" : "high", next: () => state.flags.trueName ? "nombre_invertido" : "final_escape", effect: () => { changeSoul(state.flags.trueName ? -5 : -15); }},
     ]
   },
 
@@ -371,8 +379,8 @@ var scenes = {
     chapter: "Capítulo VII — El Juicio",
     text: `Enciendes la vela negra. Su llama es <span class="highlight">invertida</span> — la punta hacia abajo, como una gota de fuego cayendo hacia el infierno. Pero ilumina. Y en esa luz, Belphegor aparece. No como un monstruo — como un hombre. Traje negro, ojos amarillos, sonrisa de cuchillo.<br><br><span class="whisper">"Arrancaste mi contrato. Eso dolió. Los contratos son sagrados, incluso para nosotros."</span><br><br>Levanta la mano. En ella, la <span class="highlight">página del pacto</span>, restaurada. <span class="whisper">"Siempre hay una copia."</span>`,
     choices: [
-      { text: "Quemar la página con la vela negra", risk: "high", next: state.flags.trueName ? "final_secreto" : "final_escape", effect: () => { changeSoul(-15); }},
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB" : "Negarse. Simplemente decir NO.", risk: state.flags.trueName ? "medium" : "high", next: state.flags.trueName ? "nombre_invertido" : "final_voluntad", effect: () => { changeSoul(state.flags.trueName ? -5 : -10); }},
+      { text: "Quemar la página con la vela negra", risk: "high", next: () => state.flags.trueName ? "final_secreto" : "final_escape", effect: () => { changeSoul(-15); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB" : "Negarse. Simplemente decir NO.", risk: () => state.flags.trueName ? "medium" : "high", next: () => state.flags.trueName ? "nombre_invertido" : "final_voluntad", effect: () => { changeSoul(state.flags.trueName ? -5 : -10); }},
     ]
   },
 
@@ -387,7 +395,7 @@ var scenes = {
   // ===== ENDINGS =====
   final_bueno: {
     chapter: "⛧ FINAL — SUPERVIVIENTE ⛧",
-    text: `<div class="ending-title ending-good">SUPERVIVIENTE</div>Sales de la casa. La puerta se cierra detrás de ti con un suspiro, como un pulmón exhalando por última vez. La lluvia se ha detenido. El cielo es gris pero ya no opresivo.<br><br>La casona comienza a <span class="highlight">envejecer</span> visiblemente. La madera se pudre, las ventanas colapsan, el techo cede. En minutos, es solo un montón de escombros cubiertos de enredaderas negras.<br><br>Caminas. No miras atrás. Pero durante el resto de tu vida, cada vez que mires un espejo, te parecerá ver — solo por un instante — <span class="highlight">unos ojos amarillos</span> detrás de tu reflejo.<br><br><span class="gold">Has sobrevivido. Pero Belphegor tiene buena memoria. Y la eternidad es paciente.</span><br><br><span class="whisper">Alma restante: ${() => state.soul}%</span>`,
+    text: `<div class="ending-title ending-good">SUPERVIVIENTE</div>Sales de la casa. La puerta se cierra detrás de ti con un suspiro, como un pulmón exhalando por última vez. La lluvia se ha detenido. El cielo es gris pero ya no opresivo.<br><br>La casona comienza a <span class="highlight">envejecer</span> visiblemente. La madera se pudre, las ventanas colapsan, el techo cede. En minutos, es solo un montón de escombros cubiertos de enredaderas negras.<br><br>Caminas. No miras atrás. Pero durante el resto de tu vida, cada vez que mires un espejo, te parecerá ver — solo por un instante — <span class="highlight">unos ojos amarillos</span> detrás de tu reflejo.<br><br><span class="gold">Has sobrevivido. Pero Belphegor tiene buena memoria. Y la eternidad es paciente.</span><br><br><span class="whisper">Alma restante: \${state.soul}%</span>`,
     choices: [
       { text: "⛧ JUGAR DE NUEVO ⛧", risk: "safe", next: "restart", effect: () => {} }
     ]
@@ -460,6 +468,168 @@ var scenes = {
   final_voluntad: {
     chapter: "⛧ FINAL — VOLUNTAD DE HIERRO ⛧",
     text: `<div class="ending-title ending-good">VOLUNTAD DE HIERRO</div>Dices <span class="gold">NO</span>. Simple. Final. Absoluto.<br><br>Belphegor se detiene. En sus ojos milenarios hay algo que no ha sentido en eones: <span class="highlight">confusión</span>. Todos los demás siempre quieren algo. Poder. Venganza. Amor. Pero tú — tú simplemente dices no.<br><br><span class="whisper">"¿No quieres... nada?"</span><br><br>"No de ti."<br><br>El demonio se encoge. No por magia — por <span class="highlight">incomprensión</span>. Un alma que no desea no puede ser comprada. Y un demonio que no puede comprar no tiene poder.<br><br>Sales caminando. La puerta se abre sola. La lluvia ha parado. Y la casa, privada de la transacción que necesitaba para existir, se desmorona como un sueño olvidado.<br><br><span class="gold">La voluntad humana, en su forma más pura, es el único exorcismo verdadero.</span>`,
+    choices: [
+      { text: "⛧ JUGAR DE NUEVO ⛧", risk: "safe", next: "restart", effect: () => {} }
+    ]
+  },
+
+  // ===== PHASE 4: NEW COMBAT & RPG SCENES =====
+
+  // ---- SÓTANO: New area unlocked via escalera ----
+  sotano: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `Las escaleras descienden más de lo que cualquier sótano debería permitir. Cuentas los peldaños: treinta, cuarenta, <span class="highlight">sesenta</span>. El aire se vuelve húmedo y caliente, como el aliento de algo enorme.<br><br>Al final, una cámara circular de piedra bruta. En el centro, un <span class="gold">pozo sin fondo</span> del que emana un zumbido grave que sientes en los dientes. Las paredes están cubiertas de <span class="highlight">arañazos</span> — miles de ellos, dejados por dedos humanos a lo largo de siglos.<br><br>Junto al pozo, un <span class="gold">altar de obsidiana</span> con trece ranuras vacías. Y algo se mueve en la oscuridad, al borde de tu visión.`,
+    choices: [
+      { text: "Examinar el altar de obsidiana", risk: "medium", next: "altar_obsidiana", effect: () => { changeSoul(-5); addItem("🕳️ Fragmento del pozo"); }},
+      { text: "Asomarte al pozo sin fondo", risk: "high", next: "pozo_abismo", effect: () => { changeSoul(-15); }},
+      { text: "Enfrentar lo que se mueve en la oscuridad", risk: "fatal", next: "combate_sombra", effect: () => { changeSoul(-5); }},
+      { text: "Subir corriendo — este lugar es MALO", risk: "safe", next: "escalera", effect: () => {} },
+    ]
+  },
+
+  altar_obsidiana: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `El altar es antiguo. Más antiguo que la casa. Más antiguo que el <span class="highlight">lenguaje</span>. Las trece ranuras esperan trece llaves que nunca existieron — o que fueron destruidas hace eones.<br><br>Al tocar la obsidiana, sientes un pulso. Como un corazón. Como <span class="whisper">SU corazón</span>. Este altar es el ancla de Belphegor al mundo material. Destruirlo debilitaría al demonio enormemente. Pero la obsidiana es indestructible por medios normales.<br><br>En la base del altar, encuentras una <span class="gold">inscripción</span>: <span class="whisper">"Trece almas lo forjaron. Trece sacrificios lo romperán. O un nombre, pronunciado al revés, frente a un espejo roto, bajo la decimotercera hora."</span>`,
+    choices: [
+      { text: "Memorizar la inscripción y subir", risk: "safe", next: "vestibulo", effect: () => { addItem("📜 Secreto del altar"); try { state.flags.altarSecret = true; } catch(e) {} }},
+      { text: "Intentar arrancar un fragmento del altar", risk: "high", next: "combate_altar", effect: () => { changeSoul(-10); }},
+      { text: "Meditar frente al altar — abrir tu mente al pozo", risk: "fatal", next: "vision_abismo", effect: () => { changeSoul(-20); }},
+    ]
+  },
+
+  pozo_abismo: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `Te asomas. El pozo no tiene fondo. No tiene paredes tampoco — a cierta profundidad, las piedras simplemente <span class="highlight">dejan de existir</span> y solo queda <span class="whisper">vacío</span>. Un vacío que te mira de vuelta.<br><br>Algo sube. No lo ves, pero lo sientes: un aliento helado que asciende como una columna de aire muerto. Y con él, <span class="highlight">voces</span>. Cientos de voces susurrando tu nombre, tus miedos, tus secretos más oscuros.<br><br>Una mano hecha de sombra emerge del pozo y se extiende hacia ti, ofreciendo un <span class="gold">ojo de cristal negro</span>.`,
+    choices: [
+      { text: "Tomar el ojo de cristal negro", risk: "fatal", next: "ojo_abismo", effect: () => { changeSoul(-20); addItem("🔮 Ojo del Abismo"); try { state.flags.abyssEye = true; } catch(e) {} }},
+      { text: "Retroceder y cerrar los ojos", risk: "medium", next: "sotano", effect: () => { changeSoul(-5); }},
+    ]
+  },
+
+  ojo_abismo: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `El ojo de cristal está <span class="highlight">caliente</span>. Pulsa en tu mano como un corazón diminuto. Cuando lo miras, ves el mundo <span class="whisper">al revés</span>: las paredes respiran, el techo sangra, y donde debería haber oscuridad hay una luz <span class="highlight">dorada y enferma</span> que emana de cosas que no deberían brillar.<br><br>Con el Ojo del Abismo, puedes ver las <span class="gold">líneas de poder</span> que conectan todo en la casa: las cadenas invisibles de Belphegor, los puntos débiles del pentagrama, las cicatrices donde la realidad fue cosida con hilo de pesadilla.<br><br><span class="whisper">También puedes ver que algo te sigue. Algo que subió del pozo contigo.</span>`,
+    choices: [
+      { text: "Usar el ojo para encontrar el punto débil de Belphegor", risk: "medium", next: "vestibulo", effect: () => { try { state.flags.seesWeakness = true; } catch(e) {} }},
+      { text: "Enfrentar a lo que te sigue", risk: "high", next: "combate_sombra", effect: () => { changeSoul(-5); }},
+    ]
+  },
+
+  // ---- COMBAT SCENES ----
+  combate_sombra: {
+    chapter: "⚔️ Combate Ritual",
+    text: `De la oscuridad emerge una <span class="highlight">Sombra Menor</span> — un eco de las almas que fueron consumidas en este lugar. No tiene rostro, pero tiene <span class="highlight">hambre</span>. Se lanza hacia ti con garras de oscuridad solidificada.<br><br><span class="gold">¡COMBATE RITUAL!</span> El pentagrama del suelo brilla. Debes golpear los sigilos en el momento exacto para canalizar tu defensa.`,
+    choices: [
+      { text: "⛧ INICIAR COMBATE RITUAL ⛧", risk: "high", next: "combate_sombra", effect: () => {
+        try { CombatEngine.start('shadow_lesser', function(victory) {
+          if (victory) { loadScene('post_combate_sombra'); }
+          else { changeSoul(-15); loadScene('vestibulo'); }
+        }); } catch(e) {}
+      }},
+      { text: "Intentar huir", risk: "medium", next: "vestibulo", effect: () => { changeSoul(-10); }},
+    ]
+  },
+
+  post_combate_sombra: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `La sombra se disuelve en jirones de oscuridad que se desvanecen como humo. Donde estaba, queda un <span class="gold">fragmento de esencia oscura</span> — un residuo cristalizado de su existencia.<br><br>El combate te ha dejado tembloroso, pero más fuerte. Sientes que entiendes un poco mejor las reglas de este lugar. <span class="whisper">El ritual no es solo para invocar. Es para sobrevivir.</span>`,
+    choices: [
+      { text: "Tomar el fragmento de esencia", risk: "safe", next: "vestibulo", effect: () => { addItem("⚫ Esencia oscura"); }},
+      { text: "Explorar más el sótano", risk: "medium", next: "sotano", effect: () => {} }
+    ]
+  },
+
+  combate_altar: {
+    chapter: "⚔️ Combate Ritual",
+    text: `Al tocar el altar con intención de destruirlo, la <span class="highlight">Mano del Abismo</span> emerge de la obsidiana. Cinco dedos enormes, cada uno terminado en una garra que gotea vacío. El altar se defiende — o más bien, lo que habita <span class="highlight">dentro</span> del altar se defiende.<br><br><span class="gold">¡COMBATE RITUAL!</span> Esta criatura es más fuerte que una sombra común. Necesitarás precisión.`,
+    choices: [
+      { text: "⛧ INICIAR COMBATE RITUAL ⛧", risk: "fatal", next: "combate_altar", effect: () => {
+        try { CombatEngine.start('demon_hand', function(victory) {
+          if (victory) { addItem("🗿 Fragmento de obsidiana"); try { state.flags.altarDamaged = true; } catch(e) {} loadScene('post_combate_altar'); }
+          else { changeSoul(-20); loadScene('sotano'); }
+        }); } catch(e) {}
+      }},
+    ]
+  },
+
+  post_combate_altar: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `La Mano se retrae dentro del altar, dejando una <span class="highlight">grieta</span> en la obsidiana perfecta. Del interior emana un brillo <span class="gold">dorado enfermizo</span> y un sonido como de campanas lejanas tocando al revés.<br><br>Has dañado el ancla de Belphegor. En algún lugar de la casa, el demonio <span class="highlight">grita</span>. Las paredes tiemblan. <span class="whisper">"¿QUÉ HAS HECHO?"</span><br><br>Un fragmento de obsidiana cae a tus pies. Es caliente y pulsa con una energía que reconoces como <span class="highlight">peligrosa</span> y <span class="gold">poderosa</span>.`,
+    choices: [
+      { text: "Subir con el fragmento — ahora tienes una ventaja", risk: "safe", next: "vestibulo", effect: () => {} },
+      { text: "Usar el fragmento para intentar destruir más el altar", risk: "fatal", next: "vision_abismo", effect: () => { changeSoul(-15); }},
+    ]
+  },
+
+  vision_abismo: {
+    chapter: "Capítulo III — Las Profundidades",
+    text: `Cierras los ojos frente al altar. Tu mente se expande. Se estira. Se <span class="highlight">rompe</span>.<br><br>Caes dentro del pozo sin caer. Flotas en un vacío que no es negro sino <span class="highlight">ausencia de todo color</span>. Y ahí, en el centro de la nada, ves a <span class="gold">Belphegor</span> tal como era antes de la caída.<br><br>No era un monstruo. Era un <span class="highlight">ángel de la pereza</span> — el que susurraba a los humanos que descansaran, que pararan, que dejaran de luchar. Su pecado no fue la maldad. Fue la <span class="whisper">compasión mal dirigida</span>. Y por eso lo encerraron. No en el infierno — en una casa, con humanos, para que viera por toda la eternidad lo que su "compasión" había causado.<br><br>Cuando despiertas, estás llorando. Y Belphegor, por primera vez, <span class="whisper">está en silencio</span>.`,
+    choices: [
+      { text: "Subir con este conocimiento terrible", risk: "safe", next: "vestibulo", effect: () => { addItem("💡 Verdad de Belphegor"); try { state.flags.knowsTruth = true; BelphegorAI.react('mercy'); } catch(e) {} }},
+    ]
+  },
+
+  // ---- BELPHEGOR CONFRONTATION WITH COMBAT ----
+  combate_doble: {
+    chapter: "⚔️ Combate Ritual — El Doble",
+    text: `Tu doble oscuro te mira con tus propios ojos. Pero los suyos están <span class="highlight">invertidos</span> — iris negro, esclerótica roja. Sonríe con tu boca y dice con tu voz: <span class="whisper">"Yo soy lo que serás. Yo soy lo que fuiste. Yo soy lo que eres cuando nadie mira."</span><br><br>Ataca con movimientos que reconoces — son <span class="highlight">tuyos</span>. Cada golpe es un recuerdo doloroso convertido en arma.`,
+    choices: [
+      { text: "⛧ COMBATE RITUAL: Tu Doble Oscuro ⛧", risk: "high", next: "combate_doble", effect: () => {
+        try { CombatEngine.start('mirror_double', function(victory) {
+          if (victory) { addItem("🪞 Espejo del alma"); loadScene('post_combate_doble'); }
+          else { changeSoul(-20); loadScene('espejo'); }
+        }); } catch(e) {}
+      }},
+    ]
+  },
+
+  post_combate_doble: {
+    chapter: "Capítulo IV — El Espejo",
+    text: `Tu doble se desmorona como un espejo roto. Cada fragmento muestra una versión diferente de ti: el tú que hubiera aceptado el pacto, el tú que hubiera huido, el tú que hubiera muerto.<br><br>De los fragmentos, uno brilla más que los otros. Lo recoges. Es un <span class="gold">Espejo del Alma</span> — un objeto que muestra la verdad, sin importar cuántas capas de mentiras la cubran.<br><br><span class="whisper">Con esto, ninguna ilusión de Belphegor funcionará en ti.</span>`,
+    choices: [
+      { text: "Continuar con el espejo como arma", risk: "safe", next: "vestibulo", effect: () => { try { state.flags.mirrorSoul = true; } catch(e) {} }},
+    ]
+  },
+
+  // ---- BELPHEGOR BOSS FIGHT ----
+  combate_belphegor: {
+    chapter: "⚔️ COMBATE FINAL — BELPHEGOR",
+    text: `<span class="gold">BELPHEGOR</span> se alza en toda su magnitud. Ya no es una sombra, un susurro, una mano en la oscuridad. Es un <span class="highlight">dios caído</span>, con alas de ceniza y ojos de sol muerto, y el peso de milenios de odio y soledad en cada movimiento.<br><br>El pentagrama del suelo estalla en llamas negras. La casa entera <span class="highlight">grita</span>. Y tú estás aquí, frente a la cosa más antigua y terrible que este mundo ha visto, con nada más que tu voluntad y los rituales que aprendiste.<br><br><span class="gold">Es hora del combate final.</span>`,
+    choices: [
+      { text: "⛧ COMBATE FINAL: BELPHEGOR ⛧", risk: "fatal", next: "combate_belphegor", effect: () => {
+        try { CombatEngine.start('belphegor_true', function(victory) {
+          if (victory) { loadScene('post_combate_belphegor'); }
+          else { changeSoul(-40); loadScene('final_malo'); }
+        }); } catch(e) {}
+      }},
+    ]
+  },
+
+  post_combate_belphegor: {
+    chapter: "Capítulo VII — El Juicio",
+    text: `Belphegor cae. No con un estruendo — con un <span class="whisper">suspiro</span>. El demonio más antiguo de la casa se arrodilla, diminuto ahora, casi humano, y te mira con ojos que ya no son de sol muerto sino de <span class="highlight">ambar triste</span>.<br><br><span class="whisper">"Bien jugado, mortal. Bien jugado."</span><br><br>La casa tiembla. Las paredes se agrietan. Sin la fuerza de Belphegor sosteniéndola, la casona comienza a <span class="highlight">morir</span>. Tienes poco tiempo para decidir qué hacer con el demonio derrotado.`,
+    choices: [
+      { text: "Destruirlo con el Sello de Destierro (abrir Grimorio)", risk: "fatal", next: "final_secreto", effect: () => {
+        try { SpellSystem.show(); } catch(e) {}
+        changeSoul(-15);
+      }},
+      { text: "Perdonarlo — dejarlo ir", risk: "medium", next: "final_misericordia", effect: () => { try { BelphegorAI.react('mercy'); } catch(e) {} }},
+      { text: () => state.flags.knowsTruth ? "Pronunciar su nombre original — el de antes de la caída" : "Salir corriendo antes de que la casa se derrumbe", risk: () => state.flags.knowsTruth ? "safe" : "high", next: () => state.flags.knowsTruth ? "final_redencion" : "final_escape", effect: () => { changeSoul(state.flags.knowsTruth ? 10 : -10); }},
+    ]
+  },
+
+  // ---- NEW ENDINGS ----
+  final_misericordia: {
+    chapter: "⛧ FINAL — MISERICORDIA ⛧",
+    text: `<div class="ending-title ending-good">MISERICORDIA</div>Le ofreces la mano a Belphegor. El demonio mira tu mano como si fuera un objeto que no reconoce. Ningún humano le ha ofrecido la mano en milenios. Solo han ofrecido sangre, pactos, o puños.<br><br><span class="whisper">"¿Por qué?"</span><br><br>"Porque alguien tiene que ser el primero."<br><br>Belphegor toma tu mano. Su toque es <span class="highlight">frío</span>, pero no desagradable. Como agarrar una piedra en invierno. El demonio se encoge, se comprime, hasta ser del tamaño de una <span class="gold">llama negra</span> que flota sobre tu palma.<br><br><span class="whisper">"No soy libre. Pero por primera vez en eones... no estoy solo."</span><br><br>Sales de la casa con una llama negra en el pecho que nadie puede ver. Belphegor duerme ahí, pacífico por primera vez. Y tú cargas con un demonio que, quizás, algún día recuerde cómo ser algo más.<br><br><span class="gold">La misericordia es el acto más peligroso del universo. Y el más poderoso.</span>`,
+    choices: [
+      { text: "⛧ JUGAR DE NUEVO ⛧", risk: "safe", next: "restart", effect: () => {} }
+    ]
+  },
+
+  final_redencion: {
+    chapter: "⛧ FINAL SECRETO — REDENCIÓN ⛧",
+    text: `<div class="ending-title ending-secret">REDENCIÓN</div>Pronuncias su nombre. No BELPHEGOR — ese es el nombre de la prisión, el nombre que le dieron al encerrarlo. Pronuncias el nombre que viste en la visión del abismo. El nombre de <span class="highlight">antes</span>.<br><br>El efecto es instantáneo. Belphegor se <span class="highlight">quiebra</span> — no como piedra, como un <span class="gold">huevo</span>. Del interior sale algo que no es un demonio. Es una <span class="highlight">luz</span>. Tenue, dorada, antigua. La luz de algo que fue bueno hace eones incontables y que fue corrompido por un castigo desproporcionado.<br><br>La luz te envuelve. No te daña — te <span class="gold">agradece</span>. Y luego asciende, atraviesa el techo, las nubes, la atmósfera, y desaparece en algún lugar más allá de las estrellas.<br><br>La casa se derrumba suavemente, como un anciano que finalmente se permite descansar. No con violencia — con <span class="whisper">alivio</span>.<br><br>Sales caminando. El sol brilla por primera vez. Y en algún lugar, algo que fue un demonio recuerda cómo ser un ángel.<br><br><span class="gold">Algunos monstruos no necesitan ser destruidos. Necesitan ser recordados.</span>`,
     choices: [
       { text: "⛧ JUGAR DE NUEVO ⛧", risk: "safe", next: "restart", effect: () => {} }
     ]

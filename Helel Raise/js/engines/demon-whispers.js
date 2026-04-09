@@ -7,11 +7,11 @@ var DemonWhispers = (() => {
 
   // Whisper personas — each has a personality and vocal signature
   const personas = [
-    { name: 'sombra',   pitch: 0.25, rate: 0.5,  vol: 0.18, bias: 'safe',   style: 'cobarde' },
-    { name: 'hambre',   pitch: 0.35, rate: 0.6,  vol: 0.22, bias: 'fatal',  style: 'tentador' },
-    { name: 'niño',     pitch: 1.4,  rate: 0.75, vol: 0.15, bias: 'random', style: 'inocente' },
-    { name: 'anciano',  pitch: 0.2,  rate: 0.45, vol: 0.20, bias: 'medium', style: 'sabio' },
-    { name: 'eco',      pitch: 0.55, rate: 0.55, vol: 0.12, bias: 'high',   style: 'repetidor' },
+    { name: 'sombra',   pitch: 0.05, rate: 0.38, vol: 0.20, bias: 'safe',   style: 'cobarde' },
+    { name: 'hambre',   pitch: 0.08, rate: 0.42, vol: 0.25, bias: 'fatal',  style: 'tentador' },
+    { name: 'niño',     pitch: 0.9,  rate: 0.55, vol: 0.15, bias: 'random', style: 'inocente' },
+    { name: 'anciano',  pitch: 0.01, rate: 0.3,  vol: 0.22, bias: 'medium', style: 'sabio' },
+    { name: 'eco',      pitch: 0.15, rate: 0.4,  vol: 0.14, bias: 'high',   style: 'repetidor' },
   ];
 
   // Whisper templates by persona style
