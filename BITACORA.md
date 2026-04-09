@@ -224,18 +224,95 @@ Atajos: M=mapa, S=stats, I=inventario, G=grimorio, Esc=cerrar
 - Profecia de muerte personalizada en cada final
 - 24 predicciones × 10 flags × 6 tiempos × 4 relaciones
 
+### Segunda Auditoria — 5 bugs, 5 fixes
+- **cocina_oscura duplicada**: Dos definiciones en scenes.js, segunda sobreescribia primera. Mergeadas en una sola con 4 opciones (grimorio + sotano + corazon + vestibulo)
+- **final_bueno mostraba `() => state.soul` literal**: Template literal evaluaba arrow function como string. Cambiado a `\${state.soul}` escapado para regex
+- **Combate cargaba post-combat inmediato**: `next:` apuntaba a post_combate_xxx, se cargaba detras del overlay. Ahora `next:` apunta a si mismo, callback navega segun victoria/derrota
+- **Achievements faltaban endings nuevos**: Agregados `final_misericordia`, `final_redencion`, `final_secreto_blocked` (total 12)
+- **Monolito legacy**: Confirmado como referencia, no version activa
+
+### Fotos como Jumpscares — Eliminacion de caras procedurales
+- **Problema**: `drawHorrorFace()` generaba caras circulares procedurales que no asustaban
+- **Solucion**: 5 fotos reales preloaded al inicio del script
+- `triggerFullJumpscare()` → dibuja foto real con filtro rojo, grain, scanlines, glitch bars
+- `triggerSubliminal()` → flash de foto real procesada
+- `triggerDoorPeek()` → foto real recortada asomandose por el borde
+- `spawnShadowFigure()` → foto real como silueta oscura de fondo
+- `drawHorrorFace()` queda como codigo muerto (nadie la llama)
+
+### Fotos inline como ilustraciones de escena
+- **Problema**: `#media-bg` con `z-index:-1` quedaba detras del canvas gradient, invisible
+- **Solucion**: Nuevo `#scene-illustration` DENTRO del area de juego (200px, arriba del texto)
+- z-index corregido: `#bg-canvas` a -1, `#media-bg` a 0
+- Filtros de brillo subidos (0.25→0.45) para que fotos sean visibles
+- Opacity de reveal a 0.9, force reflow para transiciones
+
+### Fix: Video overlay congelaba el juego
+- **Causa**: `hideVideo()` ponia opacity a 0 pero no quitaba `pointer-events:all` ni la clase `video-jumpscare` (z-index 9999). Overlay invisible bloqueaba clicks.
+- **Fix**: `hideVideo()` ahora limpia `pointer-events:none`, remueve className, y resetea el video
+- **Verificacion**: Auditados los 11 overlays del juego. Todos limpian pointer-events correctamente.
+
+### Fix: Menu de hechizos no se podia cerrar
+- **Causa**: `#spell-overlay` no tenia boton de cerrar, y `pointer-events:none` en CSS impedia interaccion
+- **Fix**: Agregado boton "CERRAR GRIMORIO" + CSS con `pointer-events:auto` + fondo oscuro
+
+### Voz del narrador — Pitch 0.01 (ultra grave)
+- Todas las voces bajadas al minimo del API (`pitch: 0.01`)
+- Rate normalizado a 0.9 (velocidad natural)
+- Demon whispers: anciano a 0.01, sombra a 0.05, hambre a 0.08
+
+### Cache-busting
+- Meta tags `no-cache, no-store, must-revalidate` en index.html
+- Todos los 37 `<script>` tags con `?v=2` para forzar recarga
+
+### Seguridad y Privacidad — Auditoria pre-deploy
+- **0 API keys, tokens, secrets** en todo el proyecto
+- **0 llamadas de red** (fetch, XMLHttp, websocket) — juego 100% offline
+- **0 tracking** (analytics, pixels, cookies de terceros)
+- **Solo localStorage** para guardar partidas (`grimorio_belphegor_save`)
+- **Unica URL externa**: Google Fonts (tipografias, inofensivo)
+- **Git author reescrito**: `Pedro de Jesus Treviño` → `HELEL RAISE <helel@noreply.com>` en todos los commits
+- Reflog purgado, gc ejecutado — cero trazas del nombre original
+
+### Git — 8 Commits totales
+```
+32ece50 feat: stable base before visceral horror implementation
+b4be7d9 Phases 3-5: Combat, spells, Belphegor AI, perspectives, art engine, sound director
+6de35c3 Add development log (BITACORA.md)
+a24f7b0 Deepen all narrator voice pitches significantly
+1d49ff2 Fix: Change const/let to var for cross-script global scope
+1f1e3a2 Phase 2: Four core RPG systems + HUD bar
+8d13bf2 Phase 1: Modularize monolith into 25+ separate files
+e68b697 Initial commit: El Grimorio de Belphegor v2.0
+```
+
 ---
 
-## ESTADISTICAS FINALES
-- **37 archivos** JS | **12,047 lineas** | **66 escenas** | **12 finales**
-- **32 engines** | **5 capas audio** | **3 perspectivas** | **6 hechizos** | **5 enemigos**
-- **5 fotos** + **3 videos** | **1 ojo que te observa**
+## ESTADISTICAS FINALES DEL PROYECTO
+
+| Metrica | Valor |
+|---|---|
+| Archivos JS | 37 (32 engines + 2 data + 3 core) |
+| Lineas de codigo | 12,000+ |
+| Escenas jugables | 66 |
+| Finales | 12 (Superviviente, Rompe-Espejos, Incendiario, Consumido, Ascension, Guardian, Pacto, Huida, Voluntad, Recipiente Fragil, Misericordia, Redencion) |
+| Engines independientes | 32 |
+| Capas de audio procedural | 5 (drone, pad, textura, pulso, melodia) |
+| Perspectivas jugables | 3 (Humano, Belphegor, Elena) |
+| Hechizos trazables | 6 |
+| Enemigos de combate | 5 |
+| Fotos horror | 5 |
+| Videos comprimidos | 3 |
+| Efectos visuales procedurales | Ojo que sigue cursor, manos, sigilos, venas, niebla, respiracion |
+| Predicciones de muerte | 24 × 10 flags × 6 tiempos × 4 relaciones |
 
 ---
 
 ## NOTAS TECNICAS
-- Monolito funciona desde `file://` directamente
-- Version modular necesita servidor: `cd "Helel Raise" && python3 -m http.server 8666`
+- **Monolito** (`grimorio_de_belphegor.html`): Funciona desde `file://` directamente pero NO tiene las fases 2-5
+- **Version modular** (`index.html`): Necesita servidor — `cd "Helel Raise" && python3 -m http.server 8667`
 - Todas las variables de engine usan `var` (no `const`/`let`) para scope global entre `<script>` tags
 - El `GameBus` tiene 30+ eventos catalogados en `GameEvents`
+- Cache-busting con `?v=2` en todos los scripts — incrementar al hacer cambios
 - El monolito original se preserva como referencia
+- Git author: `HELEL RAISE <helel@noreply.com>` (anonimizado)
