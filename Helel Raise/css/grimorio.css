@@ -426,14 +426,26 @@ body {
   100% { transform: none; color: var(--bone); }
 }
 
-/* Spell effect overlay */
+/* Spell grimoire overlay */
 #spell-overlay {
   display: none;
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
   z-index: 100;
-  pointer-events: none;
+  pointer-events: auto;
+  background: rgba(5,2,8,0.95);
+  align-items: center;
+  justify-content: center;
+}
+
+#spell-overlay canvas {
+  width: 100%;
+  height: 100%;
+}
+
+#spell-overlay .overlay-close {
+  pointer-events: auto;
 }
 
 /* Choices */
@@ -1142,6 +1154,7 @@ body {
   justify-content: center;
   background: black;
   overflow: hidden;
+  transition: opacity 0.3s ease;
 }
 
 #video-overlay video {

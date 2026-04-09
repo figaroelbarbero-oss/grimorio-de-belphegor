@@ -6,7 +6,72 @@ var JumpscareEngine = (() => {
   let peripheralActive = false;
   const MIN_SCARE_INTERVAL = 15000; // minimum 15s between scares
 
-  // ---- PROCEDURAL HORROR FACE GENERATOR ----
+  // ---- REAL PHOTO JUMPSCARE SYSTEM ----
+  var scarePhotos = [
+    'media/ritual_goats.jpg',
+    'media/skull_nun.jpg',
+    'media/deer_cult.jpg',
+    'media/rabbit_followers.jpg',
+    'media/carnival_mask.jpg',
+  ];
+  var preloadedScarePhotos = [];
+
+  // Preload all scare photos at script load time so jumpscares are instant
+  for (var _pi = 0; _pi < scarePhotos.length; _pi++) {
+    var _img = new Image();
+    _img.src = scarePhotos[_pi];
+    preloadedScarePhotos.push(_img);
+  }
+
+  // Draw a real photo onto a canvas with extreme horror filter
+  function drawScarePhoto(ctx, w, h) {
+    var img = preloadedScarePhotos[Math.floor(Math.random() * preloadedScarePhotos.length)];
+    if (!img || !img.complete) { ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h); return; }
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw photo covering the full canvas
+    var scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+    var dw = img.naturalWidth * scale;
+    var dh = img.naturalHeight * scale;
+    var dx = (w - dw) / 2;
+    var dy = (h - dh) / 2;
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    // Heavy grain noise overlay for horror
+    var imageData = ctx.getImageData(0, 0, w, h);
+    var d = imageData.data;
+    for (var i = 0; i < d.length; i += 4) {
+      var noise = (Math.random() - 0.5) * 60;
+      // Desaturate: push toward red channel
+      var gray = d[i] * 0.4 + d[i+1] * 0.1 + d[i+2] * 0.1;
+      d[i]   = Math.min(255, Math.max(0, gray * 1.4 + noise));      // red boosted
+      d[i+1] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5)); // green crushed
+      d[i+2] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5)); // blue crushed
+      // Random invert glitch on some scanlines
+      if (Math.random() < 0.002) {
+        d[i] = 255 - d[i]; d[i+1] = 255 - d[i+1]; d[i+2] = 255 - d[i+2];
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    // Scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    for (var y = 0; y < h; y += 3) {
+      ctx.fillRect(0, y, w, 1);
+    }
+
+    // Random horizontal glitch bars
+    for (var g = 0; g < 5; g++) {
+      var gy = Math.floor(Math.random() * h);
+      var gh = 2 + Math.floor(Math.random() * 8);
+      var gx = (Math.random() - 0.5) * 30;
+      ctx.drawImage(ctx.canvas, 0, gy, w, gh, gx, gy, w, gh);
+    }
+  }
+
+  // ---- PROCEDURAL HORROR FACE GENERATOR (legacy, unused) ----
   function drawHorrorFace(ctx, w, h, variant) {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = 'black';
@@ -393,8 +458,8 @@ var JumpscareEngine = (() => {
 
   // ---- MAIN JUMPSCARE TYPES ----
 
-  // 1) Full-screen face jumpscare
-  function triggerFullJumpscare(variant) {
+  // 1) Full-screen PHOTO jumpscare — real horror images
+  function triggerFullJumpscare() {
     const now = Date.now();
     if (now - lastScareTime < MIN_SCARE_INTERVAL) return;
     lastScareTime = now;
@@ -406,9 +471,8 @@ var JumpscareEngine = (() => {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
 
-    const faces = ['ghost', 'demon', 'smile', 'mask', 'clown', 'ritual'];
-    const face = variant || faces[Math.floor(Math.random() * faces.length)];
-    drawHorrorFace(ctx, canvas.width, canvas.height, face);
+    // Draw real photo with horror processing
+    drawScarePhoto(ctx, canvas.width, canvas.height);
 
     musicDrop();
     setTimeout(() => playJumpscareSound('full'), 400);
@@ -416,8 +480,6 @@ var JumpscareEngine = (() => {
 
     overlay.style.opacity = '1';
     overlay.classList.add('active');
-
-    // Screen corruption
     document.body.classList.add('screen-corrupt');
 
     setTimeout(() => {
@@ -427,7 +489,7 @@ var JumpscareEngine = (() => {
     }, 600 + Math.random() * 400);
   }
 
-  // 2) Subliminal flash — 50-150ms face flash
+  // 2) Subliminal PHOTO flash — real horror image for 50-150ms
   function triggerSubliminal() {
     const overlay = document.getElementById('subliminal-flash');
     const canvas = document.getElementById('subliminal-canvas');
@@ -435,8 +497,8 @@ var JumpscareEngine = (() => {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
 
-    const faces = ['ghost', 'smile', 'mask', 'demon'];
-    drawHorrorFace(ctx, canvas.width, canvas.height, faces[Math.floor(Math.random()*faces.length)]);
+    // Draw real photo with horror processing
+    drawScarePhoto(ctx, canvas.width, canvas.height);
 
     playJumpscareSound('subliminal');
 
@@ -482,41 +544,31 @@ var JumpscareEngine = (() => {
     setTimeout(() => { el.classList.remove('active'); }, 600);
   }
 
-  // 5) Door peek — slow figure sliding in from edge
+  // 5) Door peek — real photo sliding in from edge
   function triggerDoorPeek() {
     const canvas = document.getElementById('door-peek');
     canvas.width = 200;
     canvas.height = window.innerHeight * 0.6;
     const ctx = canvas.getContext('2d');
 
-    // Draw a peeking figure
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(0, 0, 200, canvas.height);
-
-    // Partial face visible on left edge
-    const faceX = 40;
-    const faceY = canvas.height * 0.3;
-
-    ctx.fillStyle = '#2a2020';
-    ctx.beginPath();
-    ctx.ellipse(faceX, faceY, 50, 65, 0, -Math.PI*0.5, Math.PI*0.5);
-    ctx.fill();
-
-    // One visible eye
+    // Draw real photo cropped to peek strip
+    var img = preloadedScarePhotos[Math.floor(Math.random() * preloadedScarePhotos.length)];
     ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(faceX + 15, faceY - 10, 10, 14, 0, 0, Math.PI*2);
-    ctx.fill();
+    ctx.fillRect(0, 0, 200, canvas.height);
+    if (img && img.complete) {
+      var scale = canvas.height / img.naturalHeight;
+      ctx.filter = 'brightness(0.25) contrast(2.0) saturate(0.2) sepia(0.3)';
+      ctx.drawImage(img, 0, 0, img.naturalWidth * scale * 0.4, canvas.height);
+      ctx.filter = 'none';
+    }
 
-    // Red pupil
-    ctx.fillStyle = '#990000';
-    ctx.beginPath();
-    ctx.arc(faceX + 17, faceY - 8, 3, 0, Math.PI*2);
-    ctx.fill();
-
-    // Body below
-    ctx.fillStyle = '#050505';
-    ctx.fillRect(0, faceY + 50, 60, canvas.height);
+    // Dark edge fade
+    var edgeGrad = ctx.createLinearGradient(0, 0, 200, 0);
+    edgeGrad.addColorStop(0, 'rgba(0,0,0,0.3)');
+    edgeGrad.addColorStop(0.7, 'rgba(0,0,0,0.8)');
+    edgeGrad.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = edgeGrad;
+    ctx.fillRect(0, 0, 200, canvas.height);
 
     canvas.style.opacity = '0.6';
     canvas.classList.add('peeking');
@@ -553,42 +605,25 @@ var JumpscareEngine = (() => {
     setTimeout(() => { el.style.opacity = '0'; }, 800 + Math.random() * 1200);
   }
 
-  // 7) Shadow figure in background
+  // 7) Shadow figure — real photo as dark silhouette in background
   function spawnShadowFigure() {
-    const fig = document.createElement('canvas');
+    var img = preloadedScarePhotos[Math.floor(Math.random() * preloadedScarePhotos.length)];
+    if (!img || !img.complete) return;
+
+    var fig = document.createElement('div');
     fig.className = 'shadow-figure';
-    fig.width = 120;
-    fig.height = 300;
-    const ctx = fig.getContext('2d');
+    fig.style.cssText = 'position:fixed;z-index:3;pointer-events:none;opacity:0;width:120px;height:300px;' +
+      'background-image:url(' + img.src + ');background-size:cover;background-position:center;' +
+      'filter:brightness(0.08) contrast(2.5) saturate(0) sepia(0.5);';
 
-    // Dark humanoid silhouette
-    ctx.fillStyle = 'rgba(5,2,8,0.9)';
-    ctx.beginPath();
-    ctx.ellipse(60, 35, 20, 25, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillRect(45, 55, 30, 120);
-    ctx.fillRect(30, 70, 15, 80);
-    ctx.fillRect(75, 70, 15, 80);
-    ctx.fillRect(45, 170, 15, 100);
-    ctx.fillRect(60, 170, 15, 100);
-
-    // Faint red eyes
-    ctx.fillStyle = 'rgba(139,0,0,0.6)';
-    ctx.beginPath();
-    ctx.arc(53, 32, 2, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(67, 32, 2, 0, Math.PI*2);
-    ctx.fill();
-
-    const side = Math.random() > 0.5 ? 'left' : 'right';
-    fig.style[side] = (2 + Math.random()*8) + '%';
+    var side = Math.random() > 0.5 ? 'left' : 'right';
+    fig.style[side] = (2 + Math.random() * 8) + '%';
     fig.style.bottom = '0';
 
     document.body.appendChild(fig);
 
     // Slow fade in
-    setTimeout(() => { fig.style.opacity = '0.08'; fig.style.transition = 'opacity 8s ease-in'; }, 100);
+    setTimeout(() => { fig.style.opacity = '0.12'; fig.style.transition = 'opacity 8s ease-in'; }, 100);
 
     // Then fade out and remove
     setTimeout(() => {

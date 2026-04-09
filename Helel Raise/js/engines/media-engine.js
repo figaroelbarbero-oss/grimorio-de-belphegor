@@ -410,6 +410,8 @@ var MediaEngine = (() => {
   function hideVideo() {
     if (!videoOverlay) return;
     videoOverlay.style.opacity = '0';
+    videoOverlay.style.pointerEvents = 'none';
+    videoOverlay.className = '';
     setTimeout(function() {
       if (videoEl) {
         videoEl.pause();
