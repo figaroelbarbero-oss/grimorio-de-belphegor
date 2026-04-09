@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>El Grimorio de Belphegor</title>
-<link rel="stylesheet" href="css/grimorio.css">
+<link rel="stylesheet" href="css/grimorio.css?v=2">
 </head>
 <body>
 
@@ -21,7 +24,10 @@
 
 <div id="vignette"></div>
 <div id="damage-flash"></div>
-<div id="spell-overlay"><canvas id="spell-canvas"></canvas></div>
+<div id="spell-overlay">
+  <button class="overlay-close" onclick="try{SpellSystem.hide()}catch(e){}" style="z-index:110;">✕ CERRAR GRIMORIO</button>
+  <canvas id="spell-canvas"></canvas>
+</div>
 
 <!-- JUMPSCARE OVERLAYS -->
 <div id="jumpscare-overlay"><canvas id="jumpscare-canvas"></canvas></div>
@@ -144,67 +150,67 @@ window.onerror = function(msg, src, line, col, err) {
 </script>
 
 <!-- 1. Core: Event Bus (must be first) -->
-<script src="js/game-bus-global.js"></script>
+<script src="js/game-bus-global.js?v=2"></script>
 
 <!-- 2. Audio Engines -->
-<script src="js/engines/audio.js"></script>
-<script src="js/engines/sound-design.js"></script>
+<script src="js/engines/audio.js?v=2"></script>
+<script src="js/engines/sound-design.js?v=2"></script>
 
 <!-- 3. Visual Engines -->
-<script src="js/engines/particles.js"></script>
-<script src="js/engines/dynamic-bg.js"></script>
-<script src="js/engines/media-engine.js"></script>
-<script src="js/engines/cursed-cursor.js"></script>
-<script src="js/engines/jumpscare.js"></script>
+<script src="js/engines/particles.js?v=2"></script>
+<script src="js/engines/dynamic-bg.js?v=2"></script>
+<script src="js/engines/media-engine.js?v=2"></script>
+<script src="js/engines/cursed-cursor.js?v=2"></script>
+<script src="js/engines/jumpscare.js?v=2"></script>
 
 <!-- 4. Narrative Engines -->
-<script src="js/engines/macabre-voice.js"></script>
-<script src="js/engines/demon-whispers.js"></script>
-<script src="js/engines/narrative-ai.js"></script>
+<script src="js/engines/macabre-voice.js?v=2"></script>
+<script src="js/engines/demon-whispers.js?v=2"></script>
+<script src="js/engines/narrative-ai.js?v=2"></script>
 
 <!-- 5. Persistence & NG+ -->
-<script src="js/engines/persistence-legacy.js"></script>
-<script src="js/engines/new-game-plus.js"></script>
+<script src="js/engines/persistence-legacy.js?v=2"></script>
+<script src="js/engines/new-game-plus.js?v=2"></script>
 
 <!-- 6. v2 Enhancement Engines -->
-<script src="js/engines/text-corruption.js"></script>
-<script src="js/engines/heartbeat-sync.js"></script>
-<script src="js/engines/name-trap.js"></script>
-<script src="js/engines/cruelty-gate.js"></script>
-<script src="js/engines/inherited-objects.js"></script>
-<script src="js/engines/cursed-guide.js"></script>
-<script src="js/engines/perception-attack.js"></script>
+<script src="js/engines/text-corruption.js?v=2"></script>
+<script src="js/engines/heartbeat-sync.js?v=2"></script>
+<script src="js/engines/name-trap.js?v=2"></script>
+<script src="js/engines/cruelty-gate.js?v=2"></script>
+<script src="js/engines/inherited-objects.js?v=2"></script>
+<script src="js/engines/cursed-guide.js?v=2"></script>
+<script src="js/engines/perception-attack.js?v=2"></script>
 
 <!-- 6b. Phase 2 RPG Systems -->
-<script src="js/engines/map-engine.js"></script>
-<script src="js/engines/stats-ui.js"></script>
-<script src="js/engines/inventory-system.js"></script>
-<script src="js/engines/clock-engine.js"></script>
+<script src="js/engines/map-engine.js?v=2"></script>
+<script src="js/engines/stats-ui.js?v=2"></script>
+<script src="js/engines/inventory-system.js?v=2"></script>
+<script src="js/engines/clock-engine.js?v=2"></script>
 
 <!-- 6c. Phase 3 Interaction Systems -->
-<script src="js/engines/combat-engine.js"></script>
-<script src="js/engines/spell-system.js"></script>
-<script src="js/engines/belphegor-ai.js"></script>
+<script src="js/engines/combat-engine.js?v=2"></script>
+<script src="js/engines/spell-system.js?v=2"></script>
+<script src="js/engines/belphegor-ai.js?v=2"></script>
 
 <!-- 6d. Phase 4 Content Systems -->
-<script src="js/engines/perspective-engine.js"></script>
-<script src="js/engines/death-oracle.js"></script>
+<script src="js/engines/perspective-engine.js?v=2"></script>
+<script src="js/engines/death-oracle.js?v=2"></script>
 
 <!-- 6e. Phase 5 Polish -->
-<script src="js/engines/art-engine.js"></script>
-<script src="js/engines/sound-director.js"></script>
+<script src="js/engines/art-engine.js?v=2"></script>
+<script src="js/engines/sound-director.js?v=2"></script>
 
 <!-- 7. Data -->
-<script src="js/data/lore.js"></script>
-<script src="js/data/scenes.js"></script>
+<script src="js/data/lore.js?v=2"></script>
+<script src="js/data/scenes.js?v=2"></script>
 
 <!-- 8. Legacy Game State & Functions -->
-<script src="js/engines/game-state-legacy.js"></script>
-<script src="js/engines/typewriter.js"></script>
-<script src="js/game-legacy.js"></script>
+<script src="js/engines/game-state-legacy.js?v=2"></script>
+<script src="js/engines/typewriter.js?v=2"></script>
+<script src="js/game-legacy.js?v=2"></script>
 
 <!-- 9. Event Wiring (must be last) -->
-<script src="js/init.js"></script>
+<script src="js/init.js?v=2"></script>
 
 </body>
 </html>
