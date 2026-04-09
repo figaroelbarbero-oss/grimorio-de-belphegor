@@ -13,6 +13,13 @@ var JumpscareEngine = (() => {
     'media/deer_cult.jpg',
     'media/rabbit_followers.jpg',
     'media/carnival_mask.jpg',
+    'media/jump1.jpg',
+    'media/jump2.jpg',
+    'media/jump3.jpg',
+    'media/jump4.jpg',
+    'media/sub1.jpg',
+    'media/sub2.jpg',
+    'media/sub3.jpg',
   ];
   var preloadedScarePhotos = [];
 
