@@ -772,6 +772,24 @@
     50% { background-color: #2a0c0c; }
     75% { background-color: #1e0909; }
   }
+
+  /* Scene illustration inside game area */
+  #scene-illustration::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(to top, rgba(10,5,15,0.98), rgba(10,5,15,0.4), transparent);
+    pointer-events: none;
+  }
+  #scene-illustration::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 3px);
+    pointer-events: none;
+    z-index: 1;
+  }
 </style>
 </head>
 <body>
@@ -859,6 +877,7 @@
       <div id="inventory"></div>
     </div>
 
+    <div id="scene-illustration" style="width:100%;height:0;max-height:250px;overflow:hidden;border-radius:6px;margin-bottom:15px;position:relative;transition:height 1.5s cubic-bezier(0.2,0,0.3,1);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
     <div id="narrative"></div>
     <div id="choices"></div>
     <div id="final-ouija-container" style="display:none; text-align:center; margin-top:20px; position:relative;">
@@ -874,6 +893,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 window.onerror = function(msg, src, line, col, err) {
   document.title = 'ERROR: ' + msg;
@@ -1724,6 +1744,130 @@ function startTitleHijack() {
   }, 4000);
 }
 
+// ====== SILENT MICROPHONE — Belphegor listens ======
+var _micActive = false;
+var _micAnalyser = null;
+var _micSilenceTimer = 0;
+var _micLastReaction = 0;
+
+function startMicrophoneListener() {
+  if (_micActive) return;
+  try {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      _micActive = true;
+      var micCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var source = micCtx.createMediaStreamSource(stream);
+      _micAnalyser = micCtx.createAnalyser();
+      _micAnalyser.fftSize = 256;
+      source.connect(_micAnalyser);
+      // Don't connect to destination — we never play back or record
+
+      var dataArray = new Uint8Array(_micAnalyser.frequencyBinCount);
+      _micSilenceTimer = 0;
+
+      function listenLoop() {
+        if (!_micActive) return;
+        _micAnalyser.getByteFrequencyData(dataArray);
+
+        // Calculate average volume
+        var sum = 0;
+        for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        var avgVolume = sum / dataArray.length;
+
+        var now = Date.now();
+        // Cooldown: don't react more than once every 30 seconds
+        if (now - _micLastReaction < 30000) {
+          requestAnimationFrame(listenLoop);
+          return;
+        }
+
+        if (avgVolume > 40) {
+          // NOISE DETECTED — Belphegor reacts
+          _micSilenceTimer = 0;
+          _micLastReaction = now;
+          var noiseReactions = [
+            'Baja la voz... los vas a despertar.',
+            'Shh... te van a oír.',
+            'Haces demasiado ruido. Él se acerca cuando hay ruido.',
+            'Silencio. Los muertos escuchan.',
+            'Cada sonido que haces... me alimenta.',
+          ];
+          var text = noiseReactions[Math.floor(Math.random() * noiseReactions.length)];
+          try { JumpscareEngine.creepyText(text); } catch(e) {
+            // Fallback: show as popup
+            showMicReaction(text);
+          }
+          try { if (audioEnabled) SoundDesign.hellWind(); } catch(e) {}
+
+        } else if (avgVolume < 5) {
+          // SILENCE — count frames
+          _micSilenceTimer++;
+          // After ~45 seconds of silence (45 * ~60fps / requestAnimationFrame)
+          if (_micSilenceTimer > 2700) {
+            _micSilenceTimer = 0;
+            _micLastReaction = now;
+            var silenceReactions = [
+              'Me gusta cuando te quedas tan callado. Escucho tu respiración.',
+              'El silencio es mi idioma favorito.',
+              'No te muevas. Estoy justo detrás de ti.',
+              'Puedo oír tu corazón desde aquí. Late rápido.',
+              'Tan callado... ¿tienes miedo? Deberías.',
+              state.playerName && state.playerName !== 'Desconocido' ?
+                state.playerName + '... respira más despacio. Te estoy escuchando.' :
+                'Respira más despacio. Te estoy escuchando.',
+            ];
+            var text = silenceReactions[Math.floor(Math.random() * silenceReactions.length)];
+            try { JumpscareEngine.creepyText(text); } catch(e) {
+              showMicReaction(text);
+            }
+            try { if (audioEnabled) SoundDesign.demonGrowl(); } catch(e) {}
+          }
+        } else {
+          _micSilenceTimer = 0;
+        }
+
+        requestAnimationFrame(listenLoop);
+      }
+      listenLoop();
+    }).catch(function(e) {
+      // User denied mic — no problem, fail silently
+      _micActive = false;
+    });
+  } catch(e) {
+    _micActive = false;
+  }
+}
+
+function showMicReaction(text) {
+  var el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9995;pointer-events:none;font-family:MedievalSharp,cursive;color:#cc0000;font-size:1.8rem;text-shadow:0 0 20px #8b0000;opacity:0.9;letter-spacing:4px;text-align:center;max-width:80vw;';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(function() { el.style.transition = 'opacity 1.5s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 1500); }, 3000);
+}
+
+function stopMicrophoneListener() {
+  _micActive = false;
+}
+
+// ====== BATTERY PARANOIA ======
+function checkBatteryParanoia() {
+  try {
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(function(battery) {
+        if (battery.level <= 0.20 && !battery.charging) {
+          setTimeout(function() {
+            try {
+              JumpscareEngine.creepyText('TU BATERÍA MUERE. COMO TÚ.');
+              if (audioEnabled) SoundDesign.demonLaugh();
+            } catch(e) {}
+          }, 15000);
+        }
+      }).catch(function(e){});
+    }
+  } catch(e) {}
+}
+
 // ====== GAME FUNCTIONS ======
 function startGame() {
   startTitleHijack();
@@ -1767,12 +1911,15 @@ function startGame() {
   // ---- Start Perception Attacks ----
   try { PerceptionAttack.startAttacks(); } catch(e) {}
 
+  checkBatteryParanoia();
+  startMicrophoneListener();
   loadScene('intro');
   // Start ambient horror system
   JumpscareEngine.startAmbient();
 
   // ---- Scatter lore fragments into gameplay ----
   scheduleLoreDiscovery();
+  try { SupabaseEngine.showLastVictim(); } catch(e) {}
 }
 
 // Scene-specific jumpscare triggers
@@ -1953,6 +2100,49 @@ function maybeRandomScare() {
   else if (roll < 0.25) SoundDesign.chains();
 }
 
+// ====== SCENE ILLUSTRATION ENGINE ======
+var sceneImages = {
+  intro: 'media/rabbit_followers.jpg', dintel: 'media/skull_nun.jpg',
+  jardin: 'media/deer_cult.jpg', taxi_regreso: 'media/rabbit_followers.jpg',
+  absorcion: 'media/deer_cult.jpg', vestibulo: 'media/rabbit_followers.jpg',
+  vestibulo_protegido: 'media/skull_nun.jpg', cocina: 'media/carnival_mask.jpg',
+  cocina_oscura: 'media/carnival_mask.jpg', refrigerador: 'media/skull_nun.jpg',
+  masa_negra: 'media/ritual_goats.jpg', biblioteca: 'media/sub3.jpg',
+  escalera: 'media/jump1.jpg', espejo: 'media/skull_nun.jpg',
+  prisionero: 'media/carnival_mask.jpg', detras_de_ti: 'media/jump1.jpg',
+  ouija_contacto: 'media/ritual_goats.jpg', ouija_respuesta: 'media/ritual_goats.jpg',
+  ouija_amenaza: 'media/skull_nun.jpg', grimorio_abierto: 'media/skull_nun.jpg',
+  grimorio_pacto: 'media/ritual_goats.jpg', anillo: 'media/deer_cult.jpg',
+  sala_ritual: 'media/ritual_goats.jpg', invocacion: 'media/jump2.jpg',
+  contra_hechizo: 'media/deer_cult.jpg', altar_destruido: 'media/skull_nun.jpg',
+  pentagrama_alterado: 'media/ritual_goats.jpg', nombre_invertido: 'media/sub1.jpg',
+  espejo_oscuro: 'media/skull_nun.jpg', belphegor_atrapado: 'media/ritual_goats.jpg',
+  resistencia: 'media/sub2.jpg', final_confrontacion: 'media/jump2.jpg',
+  quemar_grimorio: 'media/sub1.jpg', final_bueno: 'media/deer_cult.jpg',
+  final_bueno_espejo: 'media/skull_nun.jpg', final_bueno_fuego: 'media/sub1.jpg',
+  final_malo: 'media/jump3.jpg', final_secreto: 'media/deer_cult.jpg',
+  final_guardian: 'media/ritual_goats.jpg', final_pacto: 'media/jump2.jpg',
+  final_escape: 'media/rabbit_followers.jpg', final_voluntad: 'media/skull_nun.jpg',
+  final_secreto_blocked: 'media/sub2.jpg', sotano_sacrilego: 'media/jump4.jpg',
+  pagina_arrancada: 'media/sub1.jpg', cerrar_grimorio: 'media/sub3.jpg',
+  cadena_rota: 'media/sub3.jpg', libros_encadenados: 'media/rabbit_followers.jpg',
+};
+
+function showSceneIllustration(sceneId) {
+  var el = document.getElementById('scene-illustration');
+  if (!el) return;
+  var img = sceneImages[sceneId];
+  if (!img) {
+    el.style.height = '0';
+    return;
+  }
+  el.style.backgroundImage = 'url(' + img + ')';
+  el.style.filter = 'brightness(0.45) contrast(1.3) saturate(0.3) sepia(0.2)';
+  el.style.height = '0';
+  void el.offsetWidth;
+  el.style.height = '200px';
+}
+
 function triggerBaalIntervention() {
   document.getElementById('narrative').innerHTML = '';
   document.getElementById('choices').innerHTML = '';
@@ -1975,6 +2165,7 @@ function loadScene(sceneId, fromRisk) {
     try { TextCorruption.stopCorruptionLoop(); } catch(e) {}
     try { HeartbeatSync.stopSync(); } catch(e) {}
     try { PerceptionAttack.stopAttacks(); } catch(e) {}
+    try { stopMicrophoneListener(); } catch(e) {}
     document.getElementById('ouija-frame').style.display = 'none';
     document.getElementById('title-screen').style.display = 'block';
 
@@ -1982,6 +2173,7 @@ function loadScene(sceneId, fromRisk) {
     const lastScene = state.history[state.history.length - 1];
     if (lastScene && lastScene.startsWith('final_')) {
       Persistence.recordEnding(lastScene, state.soul, NarrativeAI.getDominantTrait(), state.flags, state.inventory);
+      try { SupabaseEngine.saveEcho(lastScene, state.soul); } catch(e) {}
     }
 
     // Reset NG+ intro modification
@@ -2019,6 +2211,9 @@ function loadScene(sceneId, fromRisk) {
 
   state.history.push(sceneId);
   document.getElementById('chapter-name').textContent = scene.chapter;
+
+  // Show scene illustration
+  try { showSceneIllustration(sceneId); } catch(e) {}
 
   const narrative = document.getElementById('narrative');
   const choices = document.getElementById('choices');
@@ -2271,6 +2466,40 @@ document.addEventListener('keydown', (e) => {
     if (btns[num - 1]) btns[num - 1].click();
   }
 });
+
+// ====== ECOS DE SANGRE (Supabase) ======
+const SupabaseEngine = (() => {
+  const url = 'https://fjplwnqzpbtcsljduser.supabase.co';
+  const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqcGx3bnF6cGJ0Y3NsamR1c2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjU0MzEsImV4cCI6MjA5MTM0MTQzMX0.WSkUwux6yk4RXrP4HmfwoFb7hjuxU-RR2i-5cgMCcDs';
+  let client = null;
+  try { client = supabase.createClient(url, key); } catch(e) { console.error('Supabase init error'); }
+
+  async function saveEcho(ending, soul) {
+    if (!client) return;
+    const name = state.playerName || 'Alma anónima';
+    try { await client.from('blood_echoes').insert([{ player_name: name, ending: ending, soul_left: soul }]); } catch(e) {}
+  }
+
+  async function showLastVictim() {
+    if (!client) return;
+    try {
+      const { data } = await client.from('blood_echoes').select('*').order('created_at', { ascending: false }).limit(1);
+      if (data && data.length > 0) {
+        const victim = data[0];
+        const minutesAgo = Math.max(1, Math.floor((Date.now() - new Date(victim.created_at).getTime()) / 60000));
+        setTimeout(() => {
+          const popup = document.createElement('div');
+          popup.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;background:rgba(139,0,0,0.9);border:1px solid #ff4444;padding:15px 25px;border-radius:5px;font-family:Cinzel,serif;color:#d4c5a9;box-shadow:0 0 30px rgba(139,0,0,0.5);animation:fadeIn 0.5s ease;text-align:center;max-width:400px;';
+          popup.innerHTML = '<div style="font-size:0.7rem;letter-spacing:2px;margin-bottom:5px;">🩸 ECO DE SANGRE DETECTADO 🩸</div><div style="font-size:0.9rem;">El último en entrar fue <b>' + victim.player_name + '</b>. Su alma fue consumida hace ' + minutesAgo + ' minutos en el final: <i>' + victim.ending.replace('final_','').toUpperCase() + '</i>.</div>';
+          document.body.appendChild(popup);
+          try { SoundDesign.boneCrack(); } catch(e) {}
+          setTimeout(() => { popup.style.opacity = '0'; popup.style.transition = 'opacity 2s'; setTimeout(() => popup.remove(), 2000); }, 7000);
+        }, 4000);
+      }
+    } catch(e) {}
+  }
+  return { saveEcho, showLastVictim };
+})();
 
 // ====== BAAL OUIJA RESPONSE ======
 document.addEventListener('DOMContentLoaded', function() {
@@ -6062,6 +6291,21 @@ const PerceptionAttack = (() => {
 
   return { startAttacks, stopAttacks, glitchRandomItem };
 })();
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden && state.soul > 0 && state.history.length > 0) {
+    // El jugador cambió de pestaña por miedo
+    if (_titleHijackTimer) clearInterval(_titleHijackTimer);
+    _titleHijackTimer = null;
+    document.title = '¡¿A DÓNDE CREES QUE VAS?!';
+    try {
+      if (audioEnabled) SoundDesign.shriek();
+    } catch(e) {}
+  } else if (!document.hidden && state.soul > 0) {
+    // El jugador regresó
+    startTitleHijack();
+  }
+});
 </script>
 </body>
 </html>
