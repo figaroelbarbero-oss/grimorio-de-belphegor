@@ -30,6 +30,21 @@
     cursor: default;
   }
 
+  /* Horror background layer — rotates between real photos */
+  #horror-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.12;
+    filter: brightness(0.3) contrast(1.8) saturate(0.2) sepia(0.4);
+    transition: background-image 3s ease, opacity 2s ease;
+    pointer-events: none;
+  }
+
   /* Canvas backgrounds */
   #bg-canvas {
     position: fixed;
@@ -794,6 +809,7 @@
 </head>
 <body>
 
+<div id="horror-bg"></div>
 <canvas id="bg-canvas"></canvas>
 <canvas id="particle-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;"></canvas>
 
@@ -1731,6 +1747,31 @@ const scenes = {
     ]
   },
 };
+
+// ====== HORROR BACKGROUND ROTATOR ======
+var _horrorBgImages = ['media/backgound1.jpg', 'media/background2.jpg', 'media/backgound3.jpg'];
+var _horrorBgIdx = 0;
+var _horrorBgTimer = null;
+
+function startHorrorBackground() {
+  var el = document.getElementById('horror-bg');
+  if (!el) return;
+  // Set first image immediately
+  el.style.backgroundImage = 'url(' + _horrorBgImages[_horrorBgIdx] + ')';
+  el.style.opacity = '0.12';
+  // Rotate every 20 seconds
+  _horrorBgTimer = setInterval(function() {
+    _horrorBgIdx = (_horrorBgIdx + 1) % _horrorBgImages.length;
+    el.style.opacity = '0';
+    setTimeout(function() {
+      el.style.backgroundImage = 'url(' + _horrorBgImages[_horrorBgIdx] + ')';
+      el.style.opacity = '0.12';
+    }, 2000);
+  }, 20000);
+}
+
+// Start background on page load
+startHorrorBackground();
 
 // ====== TITLE HIJACK ======
 var _titleHijackTimer = null;
