@@ -288,31 +288,154 @@ e68b697 Initial commit: El Grimorio de Belphegor v2.0
 
 ---
 
+## SESION 3 — 2026-04-09 (continuacion)
+
+### Fase 6 — Visceral Horror (Monolito)
+
+#### Title Hijack
+- Pestaña del browser cicla: "Ayúdame", "Míralo", "Él está en la habitación" cada 4s
+- Guard contra intervalos duplicados si se reinicia
+
+#### Player Name System
+- Input "Firma con tu nombre" en pantalla de titulo
+- `state.playerName` capturado en startGame()
+- 12 susurros personalizados con el nombre del jugador cuando soul < 40
+- "te conozco, [nombre]... te conozco mejor que tú..."
+
+#### Sotano Sacrilego (nueva escena monolito)
+- Altar de obsidiana, caliz de sangre, simbolos en paredes
+- 4 opciones: beber caliz, examinar simbolos, enfrentar lo que respira, huir
+
+#### Baal Intervention (el verdadero final)
+- `final_bueno` ya no reinicia — activa `triggerBaalIntervention()`
+- Ouija board real (imagen `ouija_board.jpg`) como backdrop interactivo
+- Input para escribir pregunta + boton PREGUNTAR A LA OUIJA
+- Respuesta: "TU DESTINO... YA FUE SELLADO" + jumpscare a 3 segundos
+- Auto-focus al input para obligar interaccion
+
+#### HorrorVisuals System
+- `getScarePic(type)` gestiona pool de fotos subliminal (3) y jumpscare (4)
+- Anti-repeticion: evita mostrar la misma foto dos veces seguidas
+- `triggerSubliminalFlash(imgSrc)` — overlay temporal con foto filtrada
+- `triggerVisualJumpscare(imgSrc, duration)` — fullscreen photo con shake
+- 5 sceneScares actualizados: refrigerador, prisionero, detras_de_ti, masa_negra, final_confrontacion
+
+#### Body Horror (PerceptionAttack)
+- Masa Palpitante: 7 variantes incluyendo "está echando raíces" y "ahora es parte de tu brazo"
+- CSS `.flesh-wall` con animacion de respiracion en tonos rojos
+
+#### Ecos de Sangre (Supabase)
+- Tabla `blood_echoes` en Supabase (fjplwnqzpbtcsljduser)
+- `SupabaseEngine.saveEcho()` — guarda nombre, ending, soul al morir
+- `SupabaseEngine.showLastVictim()` — muestra popup "El último en entrar fue [nombre]" al iniciar
+- Popup rojo con "ECO DE SANGRE DETECTADO" + sonido boneCrack
+
+#### Visibility Change
+- Cambiar de pestaña: "¡¿A DÓNDE CREES QUE VAS?!" + shriek
+- Regresar: title hijack se reactiva
+
+#### Battery Paranoia
+- Bateria <= 20% y no cargando: "TU BATERÍA MUERE. COMO TÚ." + risa demoniaca a los 15s
+
+#### Microphone Listener
+- `navigator.mediaDevices.getUserMedia({ audio: true })` — pide permiso explicito
+- Solo mide volumen con AnalyserNode, NO graba nada
+- Ruido detectado (vol > 40): "Baja la voz... los vas a despertar" + hellWind
+- Silencio prolongado (~45s): "Me gusta cuando te quedas tan callado. Escucho tu respiración" + growl
+- Susurros personalizados con nombre del jugador
+- Cooldown 30s entre reacciones
+
+### Fase 7 — Monolito Completo
+
+#### Caras procedurales eliminadas (monolito)
+- `drawHorrorFace()` reemplazada por `drawRealPhoto()` en monolito
+- 12 fotos en pool de jumpscares
+- CSS filter en vez de getImageData (evita error cross-origin en file://)
+- `triggerFullJumpscare()` y `triggerSubliminal()` ahora usan fotos reales
+
+#### Ilustraciones de escena (monolito)
+- `showSceneIllustration(sceneId)` — 36 escenas mapeadas a 13 imagenes
+- Div `#scene-illustration` dentro del ouija-frame
+- Filtro: brightness(0.45) contrast(1.3) saturate(0.3) sepia(0.2)
+- Gradiente fade + scanlines CSS
+
+#### Horror Background Rotator
+- 3 fotos de fondo: ritual ocultista, craneo triptico, montaña de huesos
+- Rotan cada 20s con crossfade de 3s
+- 12% opacidad con filtro oscuro
+
+#### HUD Bar Interactivo (monolito)
+- Barra inferior: Mapa, Alma, Objetos, Hechizos
+- Panel Mapa: habitaciones descubiertas en dorado
+- Panel Stats: barra de alma, escenas visitadas, items
+- Panel Inventario: grid de items recolectados
+- Panel Hechizos: grimorio interactivo con canvas
+- Auto-update en cambios de soul/inventario
+- showHUD() en startGame(), hideHUD() en restart
+
+#### Sistema de Hechizos Interactivo (monolito)
+- 6 hechizos trazables con mouse/touch en canvas
+- Patron guia mostrado como lineas doradas punteadas
+- Pattern matching: resample a 32 puntos + distancia promedio
+- Backfire en baja precision (cuesta media alma)
+- Cooldown 30s por hechizo
+- Panel lateral con iconos, nombres, costos
+- Touch support para mobile
+
+#### Persistencia mejorada
+- Backfill de propiedades faltantes en saves viejos
+
+### Deploy
+
+#### GitHub
+- Repo: `figaroelbarbero-oss/grimorio-de-belphegor`
+- Git author: HELEL RAISE <helel@noreply.com>
+- MP3 comprimido de 164MB → 62MB para caber en GitHub
+- Archivo original de 164MB eliminado del historial con filter-branch
+- .gitignore para archivos grandes y duplicados
+
+#### Vercel
+- Deploy desde GitHub, Root Directory: `Helel Raise`
+- HTML estatico, sin build
+
+#### README.md
+- Descripcion horror: "No deberias estar leyendo esto"
+- Lista de features, advertencia, link directo al juego
+
+---
+
 ## ESTADISTICAS FINALES DEL PROYECTO
 
 | Metrica | Valor |
 |---|---|
-| Archivos JS | 37 (32 engines + 2 data + 3 core) |
-| Lineas de codigo | 12,000+ |
-| Escenas jugables | 66 |
-| Finales | 12 (Superviviente, Rompe-Espejos, Incendiario, Consumido, Ascension, Guardian, Pacto, Huida, Voluntad, Recipiente Fragil, Misericordia, Redencion) |
+| Archivos JS (modular) | 37 (32 engines + 2 data + 3 core) |
+| Monolito | 1 archivo HTML completo (~6,500 lineas) |
+| Lineas de codigo total | 18,000+ |
+| Escenas jugables | 67 (66 modular + sotano_sacrilego monolito) |
+| Finales | 12 + Baal intervention |
 | Engines independientes | 32 |
 | Capas de audio procedural | 5 (drone, pad, textura, pulso, melodia) |
 | Perspectivas jugables | 3 (Humano, Belphegor, Elena) |
-| Hechizos trazables | 6 |
+| Hechizos trazables | 6 (interactivos en monolito y modular) |
 | Enemigos de combate | 5 |
-| Fotos horror | 5 |
+| Fotos horror | 16 (5 originales + 3 subliminal + 4 jumpscare + 3 background + ouija) |
 | Videos comprimidos | 3 |
-| Efectos visuales procedurales | Ojo que sigue cursor, manos, sigilos, venas, niebla, respiracion |
+| Efectos procedurales | Ojo, manos, sigilos, venas, niebla, respiracion |
 | Predicciones de muerte | 24 × 10 flags × 6 tiempos × 4 relaciones |
+| Meta-horror | Microfono, bateria, pestaña, nombre, ecos de sangre (Supabase) |
+| Backend | Supabase (blood_echoes table) |
+| Deploy | Vercel + GitHub Pages |
 
 ---
 
 ## NOTAS TECNICAS
-- **Monolito** (`grimorio_de_belphegor.html`): Funciona desde `file://` directamente pero NO tiene las fases 2-5
+- **Monolito** (`grimorio_de_belphegor.html`): Funciona desde `file://`, tiene TODAS las fases incluyendo HUD, hechizos, Supabase, microfono
 - **Version modular** (`index.html`): Necesita servidor — `cd "Helel Raise" && python3 -m http.server 8667`
 - Todas las variables de engine usan `var` (no `const`/`let`) para scope global entre `<script>` tags
 - El `GameBus` tiene 30+ eventos catalogados en `GameEvents`
 - Cache-busting con `?v=2` en todos los scripts — incrementar al hacer cambios
-- El monolito original se preserva como referencia
+- CSS filters en vez de getImageData para compatibilidad con file://
+- Supabase project: fjplwnqzpbtcsljduser
+- Git author anonimizado: HELEL RAISE <helel@noreply.com>
+- Repo: github.com/figaroelbarbero-oss/grimorio-de-belphegor
 - Git author: `HELEL RAISE <helel@noreply.com>` (anonimizado)
