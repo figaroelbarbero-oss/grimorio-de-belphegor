@@ -788,6 +788,25 @@
     75% { background-color: #1e0909; }
   }
 
+  /* HUD Bar buttons */
+  .hud-btn {
+    background: transparent;
+    border: 1px solid rgba(139,0,0,0.3);
+    color: #d4c5a9;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    padding: 5px 14px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+  }
+  .hud-btn:hover {
+    border-color: #cc0000;
+    box-shadow: 0 0 15px rgba(139,0,0,0.3);
+    color: #cc0000;
+  }
+
   /* Scene illustration inside game area */
   #scene-illustration::after {
     content: '';
@@ -907,6 +926,39 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ====== HUD BAR ====== -->
+<div id="hud-bar" style="position:fixed;bottom:0;left:0;right:0;height:44px;background:linear-gradient(to top,rgba(5,2,8,0.98),rgba(10,5,15,0.9));border-top:1px solid rgba(139,0,0,0.3);display:none;align-items:center;justify-content:center;gap:8px;z-index:500;padding:0 15px;">
+  <button class="hud-btn" onclick="try{document.getElementById('map-panel').style.display=document.getElementById('map-panel').style.display==='block'?'none':'block'}catch(e){}">🗺️ Mapa</button>
+  <button class="hud-btn" onclick="try{document.getElementById('stats-panel').style.display=document.getElementById('stats-panel').style.display==='block'?'none':'block'}catch(e){}">📜 Alma</button>
+  <button class="hud-btn" onclick="try{document.getElementById('inv-panel').style.display=document.getElementById('inv-panel').style.display==='block'?'none':'block'}catch(e){}">🎒 Objetos</button>
+  <button class="hud-btn" onclick="try{document.getElementById('spell-panel').style.display=document.getElementById('spell-panel').style.display==='block'?'none':'block'}catch(e){}">🔮 Hechizos</button>
+</div>
+
+<!-- HUD Panels -->
+<div id="map-panel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:44px;background:rgba(5,2,8,0.97);z-index:400;padding:20px;overflow:auto;font-family:'MedievalSharp',cursive;color:#d4c5a9;">
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;top:10px;right:15px;background:transparent;border:1px solid rgba(139,0,0,0.4);color:#d4c5a9;font-family:'Cinzel',serif;font-size:0.8rem;padding:5px 12px;cursor:pointer;">✕ CERRAR</button>
+  <div style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c9a84c;text-align:center;letter-spacing:4px;margin-bottom:15px;">MAPA DE LA CASA</div>
+  <div id="map-rooms" style="text-align:center;line-height:2.2;"></div>
+</div>
+
+<div id="stats-panel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:44px;background:rgba(5,2,8,0.97);z-index:400;padding:20px;overflow:auto;font-family:'MedievalSharp',cursive;color:#d4c5a9;">
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;top:10px;right:15px;background:transparent;border:1px solid rgba(139,0,0,0.4);color:#d4c5a9;font-family:'Cinzel',serif;font-size:0.8rem;padding:5px 12px;cursor:pointer;">✕ CERRAR</button>
+  <div style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c9a84c;text-align:center;letter-spacing:4px;margin-bottom:15px;">ESTADO DEL ALMA</div>
+  <div id="stats-content"></div>
+</div>
+
+<div id="inv-panel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:44px;background:rgba(5,2,8,0.97);z-index:400;padding:20px;overflow:auto;font-family:'MedievalSharp',cursive;color:#d4c5a9;">
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;top:10px;right:15px;background:transparent;border:1px solid rgba(139,0,0,0.4);color:#d4c5a9;font-family:'Cinzel',serif;font-size:0.8rem;padding:5px 12px;cursor:pointer;">✕ CERRAR</button>
+  <div style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c9a84c;text-align:center;letter-spacing:4px;margin-bottom:15px;">INVENTARIO</div>
+  <div id="inv-content"></div>
+</div>
+
+<div id="spell-panel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:44px;background:rgba(5,2,8,0.97);z-index:400;padding:20px;overflow:auto;font-family:'MedievalSharp',cursive;color:#d4c5a9;">
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;top:10px;right:15px;background:transparent;border:1px solid rgba(139,0,0,0.4);color:#d4c5a9;font-family:'Cinzel',serif;font-size:0.8rem;padding:5px 12px;cursor:pointer;">✕ CERRAR GRIMORIO</button>
+  <div style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c9a84c;text-align:center;letter-spacing:4px;margin-bottom:15px;">⛧ GRIMORIO DE HECHIZOS ⛧</div>
+  <div id="spell-content"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1748,6 +1800,96 @@ const scenes = {
   },
 };
 
+// ====== HUD PANEL SYSTEM ======
+function showHUD() {
+  var hud = document.getElementById('hud-bar');
+  if (hud) hud.style.display = 'flex';
+}
+
+function hideHUD() {
+  var hud = document.getElementById('hud-bar');
+  if (hud) hud.style.display = 'none';
+  // Close all panels
+  ['map-panel','stats-panel','inv-panel','spell-panel'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+function updateStatsPanel() {
+  var el = document.getElementById('stats-content');
+  if (!el) return;
+  var soul = state.soul || 0;
+  var barColor = soul > 60 ? '#8b0000' : soul > 30 ? '#aa4400' : '#cc0000';
+  el.innerHTML = '<div style="margin-bottom:15px;"><div style="font-size:0.75rem;letter-spacing:2px;color:#c9a84c;margin-bottom:5px;">ALMA</div><div style="background:#111;height:12px;border-radius:3px;border:1px solid #440000;"><div style="height:100%;width:' + soul + '%;background:' + barColor + ';border-radius:3px;transition:width 0.5s;"></div></div><div style="text-align:center;font-size:0.8rem;margin-top:5px;color:#cc0000;">' + soul + ' / 100</div></div>' +
+    '<div style="font-size:0.7rem;color:#888;letter-spacing:1px;">Escenas visitadas: ' + (state.history ? state.history.length : 0) + '</div>' +
+    '<div style="font-size:0.7rem;color:#888;letter-spacing:1px;margin-top:5px;">Items: ' + (state.inventory ? state.inventory.length : 0) + '</div>';
+}
+
+function updateInvPanel() {
+  var el = document.getElementById('inv-content');
+  if (!el) return;
+  if (!state.inventory || state.inventory.length === 0) {
+    el.innerHTML = '<div style="text-align:center;opacity:0.4;font-size:0.9rem;">Vacío</div>';
+    return;
+  }
+  var html = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
+  state.inventory.forEach(function(item) {
+    html += '<div style="background:rgba(139,0,0,0.15);border:1px solid rgba(139,0,0,0.3);padding:10px;border-radius:4px;font-size:0.8rem;text-align:center;">' + item + '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function updateMapPanel() {
+  var el = document.getElementById('map-rooms');
+  if (!el) return;
+  var visited = state.history || [];
+  var rooms = {
+    'vestibulo': '🚪 Vestíbulo', 'biblioteca': '📚 Biblioteca', 'sala_ritual': '⛧ Sala Ritual',
+    'cocina': '🔪 Cocina', 'jardin': '🌹 Jardín', 'escalera': '🪜 Escalera',
+    'espejo': '🪞 Espejos', 'prisionero': '🔒 Celda', 'sotano_sacrilego': '⬇️ Sótano',
+  };
+  var html = '';
+  for (var id in rooms) {
+    var found = visited.indexOf(id) !== -1;
+    html += '<span style="display:inline-block;margin:4px 8px;padding:6px 12px;border:1px solid ' + (found ? 'rgba(201,168,76,0.5)' : 'rgba(139,0,0,0.2)') + ';border-radius:4px;font-size:0.75rem;opacity:' + (found ? '1' : '0.3') + ';color:' + (found ? '#c9a84c' : '#555') + ';">' + rooms[id] + '</span>';
+  }
+  el.innerHTML = html;
+}
+
+function updateSpellPanel() {
+  var el = document.getElementById('spell-content');
+  if (!el) return;
+  var spells = [
+    { icon: '🛡️', name: 'Escudo de Sangre', desc: 'Traza un círculo para protegerte', cost: 8 },
+    { icon: '🔥', name: 'Fuego Negro', desc: 'Triángulo invertido — daño directo', cost: 12 },
+    { icon: '⛓️', name: 'Cadenas del Purgatorio', desc: 'Zigzag — inmoviliza al enemigo', cost: 10 },
+    { icon: '👁️', name: 'Ojo Interior', desc: 'Espiral — revela lo oculto', cost: 6 },
+    { icon: '♾️', name: 'Inversión del Nombre', desc: 'Infinito — potencia ROGEHPLEB', cost: 15 },
+    { icon: '⛧', name: 'Sello de Destierro', desc: 'Pentagrama — expulsa al demonio', cost: 25 },
+  ];
+  var html = '';
+  spells.forEach(function(sp) {
+    var canAfford = state.soul >= sp.cost;
+    html += '<div style="display:flex;align-items:center;gap:12px;padding:10px;margin-bottom:8px;border:1px solid ' + (canAfford ? 'rgba(139,0,0,0.3)' : 'rgba(50,50,50,0.3)') + ';border-radius:4px;opacity:' + (canAfford ? '1' : '0.4') + ';">' +
+      '<span style="font-size:1.5rem;">' + sp.icon + '</span>' +
+      '<div><div style="font-family:Cinzel,serif;font-size:0.8rem;color:' + (canAfford ? '#c9a84c' : '#555') + ';">' + sp.name + '</div>' +
+      '<div style="font-size:0.7rem;color:#888;">' + sp.desc + '</div>' +
+      '<div style="font-size:0.65rem;color:' + (canAfford ? '#8b0000' : '#444') + ';margin-top:3px;">Costo: ' + sp.cost + ' alma</div></div></div>';
+  });
+  el.innerHTML = html;
+}
+
+// Update all panels when soul/inventory changes
+var _origUpdateUI = updateUI;
+updateUI = function() {
+  _origUpdateUI();
+  try { updateStatsPanel(); } catch(e) {}
+  try { updateInvPanel(); } catch(e) {}
+  try { updateSpellPanel(); } catch(e) {}
+};
+
 // ====== HORROR BACKGROUND ROTATOR ======
 var _horrorBgImages = ['media/backgound1.jpg', 'media/background2.jpg', 'media/backgound3.jpg'];
 var _horrorBgIdx = 0;
@@ -1912,6 +2054,7 @@ function checkBatteryParanoia() {
 // ====== GAME FUNCTIONS ======
 function startGame() {
   startTitleHijack();
+  showHUD();
   if (!audioCtx) initAudio();
   document.getElementById('title-screen').style.display = 'none';
   document.getElementById('ouija-frame').style.display = 'block';
@@ -2209,6 +2352,7 @@ function loadScene(sceneId, fromRisk) {
     try { stopMicrophoneListener(); } catch(e) {}
     document.getElementById('ouija-frame').style.display = 'none';
     document.getElementById('title-screen').style.display = 'block';
+    hideHUD();
 
     // ---- Record ending for New Game+ ----
     const lastScene = state.history[state.history.length - 1];
@@ -2255,6 +2399,7 @@ function loadScene(sceneId, fromRisk) {
 
   // Show scene illustration
   try { showSceneIllustration(sceneId); } catch(e) {}
+  try { updateMapPanel(); } catch(e) {}
 
   const narrative = document.getElementById('narrative');
   const choices = document.getElementById('choices');
