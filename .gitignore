@@ -1,1 +1,6 @@
-*.DS_Store
+# Large/duplicate files
+Helel Raise/audio/horror_ambient_original.mp3
+Helel Raise/Creación_de_Animación_Jumpscare.mp4
+Helel Raise/Video_de_Jumpscare_con_Cabra_Satánica.mp4
+Helel Raise/Video_de_árbol_con_voces_de_sufrimiento.mp4
+.DS_Store
