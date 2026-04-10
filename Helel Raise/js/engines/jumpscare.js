@@ -30,8 +30,8 @@ var JumpscareEngine = (() => {
     preloadedScarePhotos.push(_img);
   }
 
-  // Draw a real photo onto a canvas with extreme horror filter
-  function drawScarePhoto(ctx, w, h) {
+  // Draw a real photo onto a canvas with CSS horror filter (cross-origin safe)
+  function drawScarePhoto(ctx, w, h, canvasEl) {
     var img = preloadedScarePhotos[Math.floor(Math.random() * preloadedScarePhotos.length)];
     if (!img || !img.complete) { ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h); return; }
 
@@ -46,36 +46,8 @@ var JumpscareEngine = (() => {
     var dy = (h - dh) / 2;
     ctx.drawImage(img, dx, dy, dw, dh);
 
-    // Heavy grain noise overlay for horror
-    var imageData = ctx.getImageData(0, 0, w, h);
-    var d = imageData.data;
-    for (var i = 0; i < d.length; i += 4) {
-      var noise = (Math.random() - 0.5) * 60;
-      // Desaturate: push toward red channel
-      var gray = d[i] * 0.4 + d[i+1] * 0.1 + d[i+2] * 0.1;
-      d[i]   = Math.min(255, Math.max(0, gray * 1.4 + noise));      // red boosted
-      d[i+1] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5)); // green crushed
-      d[i+2] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5)); // blue crushed
-      // Random invert glitch on some scanlines
-      if (Math.random() < 0.002) {
-        d[i] = 255 - d[i]; d[i+1] = 255 - d[i+1]; d[i+2] = 255 - d[i+2];
-      }
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    // Scanlines
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    for (var y = 0; y < h; y += 3) {
-      ctx.fillRect(0, y, w, 1);
-    }
-
-    // Random horizontal glitch bars
-    for (var g = 0; g < 5; g++) {
-      var gy = Math.floor(Math.random() * h);
-      var gh = 2 + Math.floor(Math.random() * 8);
-      var gx = (Math.random() - 0.5) * 30;
-      ctx.drawImage(ctx.canvas, 0, gy, w, gh, gx, gy, w, gh);
-    }
+    // Horror filter via CSS (avoids cross-origin getImageData error on file://)
+    if (canvasEl) canvasEl.style.filter = 'brightness(0.5) contrast(2.0) saturate(0.3) sepia(0.3) hue-rotate(-10deg)';
   }
 
   // ---- PROCEDURAL HORROR FACE GENERATOR (legacy, unused) ----
@@ -479,7 +451,7 @@ var JumpscareEngine = (() => {
     const ctx = canvas.getContext('2d');
 
     // Draw real photo with horror processing
-    drawScarePhoto(ctx, canvas.width, canvas.height);
+    drawScarePhoto(ctx, canvas.width, canvas.height, canvas);
 
     musicDrop();
     setTimeout(() => playJumpscareSound('full'), 400);
@@ -505,7 +477,7 @@ var JumpscareEngine = (() => {
     const ctx = canvas.getContext('2d');
 
     // Draw real photo with horror processing
-    drawScarePhoto(ctx, canvas.width, canvas.height);
+    drawScarePhoto(ctx, canvas.width, canvas.height, canvas);
 
     playJumpscareSound('subliminal');
 
