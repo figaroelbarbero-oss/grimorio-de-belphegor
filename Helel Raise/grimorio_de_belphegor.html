@@ -5592,7 +5592,7 @@ const JumpscareEngine = (() => {
     var _simg = new Image(); _simg.src = _scarePhotos[_si]; _preloadedScareImgs.push(_simg);
   }
 
-  function drawRealPhoto(ctx, w, h) {
+  function drawRealPhoto(ctx, w, h, canvasEl) {
     var img = _preloadedScareImgs[Math.floor(Math.random() * _preloadedScareImgs.length)];
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
@@ -5600,20 +5600,8 @@ const JumpscareEngine = (() => {
     var scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
     var dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
     ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    // Horror processing
-    var id = ctx.getImageData(0, 0, w, h);
-    var d = id.data;
-    for (var i = 0; i < d.length; i += 4) {
-      var noise = (Math.random() - 0.5) * 60;
-      var gray = d[i] * 0.4 + d[i+1] * 0.1 + d[i+2] * 0.1;
-      d[i]   = Math.min(255, Math.max(0, gray * 1.4 + noise));
-      d[i+1] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5));
-      d[i+2] = Math.min(255, Math.max(0, gray * 0.3 + noise * 0.5));
-    }
-    ctx.putImageData(id, 0, 0);
-    // Scanlines
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    for (var y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
+    // Horror filter via CSS (avoids cross-origin getImageData error on file://)
+    if (canvasEl) canvasEl.style.filter = 'brightness(0.5) contrast(2.0) saturate(0.3) sepia(0.3) hue-rotate(-10deg)';
   }
 
   function triggerFullJumpscare(variant) {
@@ -5628,7 +5616,7 @@ const JumpscareEngine = (() => {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
 
-    drawRealPhoto(ctx, canvas.width, canvas.height);
+    drawRealPhoto(ctx, canvas.width, canvas.height, canvas);
 
     musicDrop();
     setTimeout(() => playJumpscareSound('full'), 400);
@@ -5653,7 +5641,7 @@ const JumpscareEngine = (() => {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
 
-    drawRealPhoto(ctx, canvas.width, canvas.height);
+    drawRealPhoto(ctx, canvas.width, canvas.height, canvas);
 
     playJumpscareSound('subliminal');
 
