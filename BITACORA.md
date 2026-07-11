@@ -475,7 +475,16 @@ Auditoria completa del repo (6 subsistemas en paralelo, 65 hallazgos, 11 altos v
 - README: enlace de "Jugar" corregido (apuntaba a `tubalcain777`, 404) + instrucciones de ejecucion local.
 - `preload="none"` en el `<audio>` (antes `auto`, forzaba descarga de 62 MB al abrir).
 
-### Pendiente (no resuelto en esta sesion)
-- **`horror_ambient.mp3` (62 MB) sigue trackeado** — supera el warning de 50 MB de GitHub; recomprimir a mono ~96 kbps o migrar a Git LFS.
-- Recomprimir reduce clone y `.git` (~79 MB); requiere reescritura de historial adicional.
-- **Fork monolito vs modular sin unificar**: siguen siendo dos juegos divergentes; decidir version canonica.
+### Peso del repo — `horror_ambient.mp3` recomprimido
+- Era mono, 48 kbps, pero duraba **~3 horas** (10.728 s) + caratula PNG embebida = 62 MB.
+- Recortado a un loop de **15 min con crossfade de 6 s** (extremo fundido contra el inicio, sin clic en el bucle) y caratula eliminada → **5.2 MB** (-92%). El master de 164 MB (`horror_ambient_original.mp3`) sigue en disco, ignorado, como fuente.
+- Blob de 62 MB purgado de **todo** el historial (`filter-branch`): `.git` pasa de **79 MB a 19 MB**; clone baja ~14 MB en vez de ~68 MB; desaparece el aviso de 50 MB de GitHub. Force push realizado.
+
+### Unificacion monolito vs modular — decision tomada
+- **Version canonica = el monolito** (`grimorio_de_belphegor.html`): es la desplegada, la que enlaza el README, funciona desde `file://` y recibio todo el desarrollo de las Sesiones 6-7. La modular (`index.html` + `js/`) queda **experimental/congelada**.
+- Eliminada la **tercera capa muerta**: `js/core/` (game-bus, game-state, persistence como modulos ES) + `js/engine-registry.js` — nadie los cargaba (0 referencias). La modular usa las variantes `-legacy` + `game-bus-global.js`.
+- README corregido para describir las features **reales** del monolito: combate ritual de pentagramas y 3 perspectivas movidos a una nota de "version experimental" (solo existen en la modular); "66 escenas" → "mas de 50".
+
+### Pendiente (decision creativa del autor)
+- **Port de features para unificar en un solo codigo**: el monolito no tiene combate ni 3 perspectivas; la modular no tiene Supabase/microfono/HUD/Baal. Unificar en una sola version (portar en una direccion) es trabajo grande que afecta el gameplay — requiere decidir el rumbo. Documentado, no ejecutado.
+- **Backend Supabase caido** (`fjplwnqzpbtcsljduser` da NXDOMAIN): "Ecos de Sangre" falla en silencio. Recrear el proyecto (con RLS + sanitizacion, ya aplicada) o retirar el bloque.

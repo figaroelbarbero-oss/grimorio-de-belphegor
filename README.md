@@ -16,17 +16,19 @@ No es un juego. Es un ritual disfrazado de página web.
 
 ## Lo que te espera
 
-- 🩸 **66 escenas** de terror narrativo con decisiones que destruyen tu alma
-- 👁️ **Un ojo que te sigue** — literalmente sigue tu cursor
+- 🩸 **Más de 50 escenas** de terror narrativo con decisiones que destruyen tu alma
 - 🎤 **Escucha tu habitación** — reacciona a tu silencio y a tus gritos
 - 📛 **Usa tu nombre** contra ti en susurros personalizados
-- ⛧ **Combate ritual** con pentagramas giratorios
 - 🔮 **Hechizos trazables** — dibuja patrones con el mouse para lanzar magia
-- 🪞 **3 perspectivas**: Juega como el humano, como el demonio, o como la guardiana eterna
 - 💀 **12 finales** — incluyendo uno que no es realmente un final
 - 🩸 **Ecos de sangre** — el juego recuerda a todos los que jugaron antes que tú
 - 🔋 **Sabe cuánta batería te queda** — y te lo recuerda
 - 📑 **La pestaña del navegador sabe** que intentaste huir
+
+> Existe además una **versión experimental** (`index.html`) con **combate ritual de
+> pentagramas giratorios** y **3 perspectivas jugables** (el humano, el demonio y la
+> guardiana eterna). Está congelada, requiere un servidor local y le faltan algunas
+> de las mecánicas de arriba — ver la sección *Invocarlo en tu propia máquina*.
 
 ## Advertencia
 
@@ -48,9 +50,13 @@ Requiere navegador moderno con JavaScript habilitado. Auriculares recomendados. 
 git clone https://github.com/figaroelbarbero-oss/grimorio-de-belphegor.git
 ```
 
-- **Versión principal**: abre `Helel Raise/grimorio_de_belphegor.html` directamente en el navegador (funciona desde `file://`).
-- **Versión modular** (experimental): necesita un servidor estático —
-  `cd "Helel Raise" && python3 -m http.server 8667` y visita `http://localhost:8667/`.
+- **Versión canónica** (`Helel Raise/grimorio_de_belphegor.html`): la que enlaza este
+  README y la que se despliega. Ábrela directamente en el navegador — funciona desde
+  `file://`, sin servidor. Es la que recibe el desarrollo activo.
+- **Versión experimental / modular** (`Helel Raise/index.html`): arquitectura separada en
+  módulos, congelada. Añade combate ritual y 3 perspectivas pero le faltan mecánicas de
+  la canónica. Necesita un servidor estático:
+  `cd "Helel Raise" && python3 -m http.server 8667` → `http://localhost:8667/`.
 
 ---
 
