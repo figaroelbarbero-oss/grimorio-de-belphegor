@@ -4,6 +4,7 @@ var DemonWhispers = (() => {
   let active = false;
   let whisperQueue = [];
   let whisperTimers = [];
+  let ambientRunning = false; // guard: only one ambientLoop chain at a time
 
   // Whisper personas — each has a personality and vocal signature
   const personas = [
@@ -222,7 +223,8 @@ var DemonWhispers = (() => {
 
   // ---- Ambient whispers during gameplay (not tied to choices) ----
   function startAmbientWhispers() {
-    if (!active) return;
+    if (!active || ambientRunning) return;
+    ambientRunning = true;
 
     const ambientLoop = () => {
       if (!active) return;
@@ -256,8 +258,8 @@ var DemonWhispers = (() => {
       whisperTimers.push(timer);
     };
 
-    // First ambient whisper after 10-20s
-    setTimeout(ambientLoop, 10000 + Math.random() * 10000);
+    // First ambient whisper after 10-20s (tracked so stopAll can cancel it)
+    whisperTimers.push(setTimeout(ambientLoop, 10000 + Math.random() * 10000));
   }
 
   // Soft noise bed under whispers
@@ -303,6 +305,7 @@ var DemonWhispers = (() => {
   function stopAll() {
     whisperTimers.forEach(clearTimeout);
     whisperTimers = [];
+    ambientRunning = false;
     // Note: we don't cancel speechSynthesis here to avoid
     // killing the narrator — whispers die naturally (they're short)
   }

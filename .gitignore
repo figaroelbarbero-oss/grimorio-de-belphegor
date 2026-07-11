@@ -1,6 +1,13 @@
-# Large/duplicate files
-Helel Raise/audio/horror_ambient_original.mp3
-Helel Raise/Creación_de_Animación_Jumpscare.mp4
-Helel Raise/Video_de_Jumpscare_con_Cabra_Satánica.mp4
-Helel Raise/Video_de_árbol_con_voces_de_sufrimiento.mp4
+# OS junk
 .DS_Store
+
+# Uncompressed / source audio — keep source masters out of the repo
+*_original.mp3
+Helel Raise/audio/horror_ambient_original.mp3
+
+# Loose source video renders in the game root (the game uses media/*.mp4)
+Helel Raise/*.mp4
+
+# Saved web pages (e.g. Pinterest exports) should never be committed
+*_files/
+Pin en *

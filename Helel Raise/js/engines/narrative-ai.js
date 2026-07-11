@@ -71,7 +71,7 @@ var NarrativeAI = (() => {
   // ---- UPDATE PROFILE FROM GAME STATE ----
   function updateProfile(sceneId, choiceRisk) {
     profile.totalChoices++;
-    profile.corruption = Math.max(0, 100 - (state.soul || 100));
+    profile.corruption = Math.max(0, 100 - (typeof state.soul === 'number' ? state.soul : 100));
 
     // Profile from risk taken
     if (riskProfile[choiceRisk]) {

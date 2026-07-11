@@ -7,7 +7,8 @@ var CursedGuide = (() => {
 
   function getUnseenEndings() {
     const allEndings = ['final_bueno','final_bueno_espejo','final_bueno_fuego','final_malo',
-      'final_secreto','final_guardian','final_pacto','final_escape','final_voluntad'];
+      'final_secreto','final_guardian','final_pacto','final_escape','final_voluntad',
+      'final_misericordia','final_redencion','final_secreto_blocked'];
     const seen = Persistence.getEndingsFound();
     return allEndings.filter(e => !seen.includes(e));
   }
@@ -49,6 +50,18 @@ var CursedGuide = (() => {
     'final_voluntad': [
       'simplemente di no... sin nombre verdadero... sin hechizo... sólo NO...',
       'la voluntad pura... no desear nada de él... ni siquiera victoria...',
+    ],
+    'final_misericordia': [
+      'cuando caiga... cuando esté de rodillas... perdónalo...',
+      'ofrécele la mano... nadie se la ha ofrecido en milenios...',
+    ],
+    'final_redencion': [
+      'su nombre de antes... el de antes de la caída... apréndelo... y pronúncialo cuando caiga...',
+      'no lo destruyas... recuérdale lo que fue... la luz que aún duerme dentro...',
+    ],
+    'final_secreto_blocked': [
+      'pisa el ojo con el alma limpia... demasiado limpia... y quiébrate...',
+      'un recipiente puro no soporta fuego infernal... inténtalo intacto... y lo sabrás...',
     ],
   };
 

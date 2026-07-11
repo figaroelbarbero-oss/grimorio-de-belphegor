@@ -157,6 +157,7 @@ var BelphegorAI = (() => {
   var dialogueQueue = [];
   var currentDialogue = null;
   var dialogueEl = null;
+  var dismissTimer = null;
 
   function showDialogue(text, mood, options) {
     options = options || {};
@@ -179,6 +180,10 @@ var BelphegorAI = (() => {
   }
 
   function displayDialogue(entry) {
+    if (dismissTimer) {
+      clearTimeout(dismissTimer);
+      dismissTimer = null;
+    }
     currentDialogue = entry;
     if (!dialogueEl) createDialogueUI();
 
@@ -219,7 +224,9 @@ var BelphegorAI = (() => {
     if (entry.choices) {
       var buttons = dialogueEl.querySelectorAll('.belph-choice');
       buttons.forEach(function(btn) {
-        btn.onclick = function() {
+        btn.onclick = function(ev) {
+          // Evita que el click burbujee al onclick del contenedor (doble dismiss)
+          if (ev && ev.stopPropagation) ev.stopPropagation();
           var idx = parseInt(btn.getAttribute('data-idx'));
           if (entry.choices[idx] && entry.choices[idx].action) {
             entry.choices[idx].action();
@@ -234,24 +241,27 @@ var BelphegorAI = (() => {
       }, entry.duration);
     }
 
-    // Click to dismiss (non-pact)
-    if (!entry.isPact) {
+    // Click to dismiss (non-pact). Un pacto NO se descarta con un click fuera de los botones.
+    if (entry.isPact) {
+      dialogueEl.onclick = null;
+    } else {
       dialogueEl.onclick = function() { dismissDialogue(); };
     }
   }
 
   function dismissDialogue() {
-    if (dialogueEl) {
-      dialogueEl.style.opacity = '0';
-      setTimeout(function() {
-        if (dialogueEl) dialogueEl.style.display = 'none';
-        currentDialogue = null;
-        // Process queue
-        if (dialogueQueue.length > 0) {
-          displayDialogue(dialogueQueue.shift());
-        }
-      }, 300);
-    }
+    if (!dialogueEl) return;
+    if (dismissTimer) return; // idempotente: ya hay un dismiss en curso
+    dialogueEl.style.opacity = '0';
+    dismissTimer = setTimeout(function() {
+      dismissTimer = null;
+      if (dialogueEl) dialogueEl.style.display = 'none';
+      currentDialogue = null;
+      // Process queue
+      if (dialogueQueue.length > 0) {
+        displayDialogue(dialogueQueue.shift());
+      }
+    }, 300);
   }
 
   function createDialogueUI() {
@@ -359,8 +369,28 @@ var BelphegorAI = (() => {
     }
   }
 
+  // ---- PACT LIFECYCLE ----
+  var pactSceneCount = 0; // escenas transcurridas desde que se aceptó el pacto activo
+
+  function completePact() {
+    var pact = rel.activePact;
+    if (!pact) return;
+    // reward/cost ya se aplicaron al aceptar el pacto — aquí solo se cierra
+    rel.activePact = null;
+    pactSceneCount = 0;
+    rel.pactsCompleted++;
+    showDialogue('Nuestro pacto se ha cumplido. ¿Ves? Soy un demonio de palabra.', rel.mood);
+    try { GameBus.emit(GameEvents.CHOICE_MADE, { type: 'pact_complete', pactId: pact.id }); } catch(e) {}
+  }
+
   // ---- SCENE GREETING ----
   function onSceneEnter(sceneId) {
+    // El pacto activo se cierra tras 3 cambios de escena desde su aceptación
+    if (rel.activePact) {
+      pactSceneCount++;
+      if (pactSceneCount >= 3) completePact();
+    }
+
     // Don't spam — cooldown
     if (Date.now() - rel.lastDialogueTime < 8000) return;
     if (Math.random() > 0.35) return; // 35% chance of comment
@@ -400,6 +430,7 @@ var BelphegorAI = (() => {
           text: '⛧ Acepto el pacto',
           action: function() {
             rel.activePact = pact;
+            pactSceneCount = 0;
             rel.pactsAccepted++;
             rel.trust += 3;
             pact.cost();
@@ -427,7 +458,7 @@ var BelphegorAI = (() => {
   // ---- ON SOUL CHANGE ----
   function onSoulChange(soul, delta) {
     if (delta < 0 && Math.random() < 0.3) {
-      react('soul_damage');
+      // Una sola vía: comentar directamente (react('soul_damage') duplicaba la frase)
       commentOnAction('soul_damage');
     }
 

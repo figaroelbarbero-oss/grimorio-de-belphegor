@@ -93,7 +93,11 @@ var ClockEngine = (() => {
         try {
           SoundDesign.deathSequence();
           JumpscareEngine.horrorSequence();
-          if (typeof loadScene === 'function') loadScene('final_malo');
+          // Carga diferida vía pendingEvent (init.js la recoge tras el SCENE_LOAD en curso);
+          // llamar loadScene aquí de forma síncrona era re-entrante y el typewrite exterior borraba el final
+          if (typeof loadScene === 'function') {
+            pendingEvent = 'final_malo';
+          }
         } catch(e) {}
       }
     },
@@ -195,7 +199,6 @@ var ClockEngine = (() => {
   function formatTime() {
     // Special display for hour 7 (6:66)
     if (hour === 7 && minute === 0) return '6:66';
-    const displayHour = hour > 6 ? hour - 1 : hour; // hours after 6 display offset
     return `${hour}:${minute.toString().padStart(2, '0')}`;
   }
 

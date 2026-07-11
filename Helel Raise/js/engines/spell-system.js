@@ -42,6 +42,7 @@ var SpellSystem = (() => {
       soulCost: 12,
       cooldown: 20000,
       minAccuracy: 0.40,
+      combatOnly: true,
       effect: function(power) {
         var dmg = Math.round(15 + power * 25);
         try { GameBus.emit(GameEvents.RITUAL_CAST, { spell: 'fuego_negro', damage: dmg }); } catch(e) {}
@@ -56,6 +57,7 @@ var SpellSystem = (() => {
       soulCost: 10,
       cooldown: 25000,
       minAccuracy: 0.35,
+      combatOnly: true,
       effect: function(power) {
         try { GameBus.emit(GameEvents.RITUAL_CAST, { spell: 'cadenas', stun: Math.round(2 + power * 3) }); } catch(e) {}
         return 'Cadenas atrapan al enemigo por ' + Math.round(2 + power * 3) + 's!';
@@ -101,6 +103,7 @@ var SpellSystem = (() => {
       soulCost: 25,
       cooldown: 90000,
       minAccuracy: 0.55,
+      combatOnly: true,
       effect: function(power) {
         var success = power > 0.7;
         try { GameBus.emit(GameEvents.RITUAL_CAST, { spell: 'destierro', banish: success, power: power }); } catch(e) {}
@@ -264,6 +267,25 @@ var SpellSystem = (() => {
     if (!selectedSpell || drawnPath.length < 8) return;
 
     var spell = spells[selectedSpell];
+
+    // Hechizos de combate: sin enemigo no cobran alma ni entran en cooldown
+    if (spell.combatOnly) {
+      var inCombat = false;
+      try { inCombat = CombatEngine.isActive(); } catch(e) {}
+      if (!inCombat) {
+        castResult = {
+          success: false,
+          power: 0,
+          text: 'No hay ningún enemigo al que golpear...',
+          color: '#cc0000',
+        };
+        castTimer = 120;
+        drawnPath = [];
+        drawing = false;
+        return;
+      }
+    }
+
     var ref = referencePatterns[spell.pattern];
     var accuracy = matchPattern(drawnPath, ref);
 
@@ -480,7 +502,13 @@ var SpellSystem = (() => {
     canvas = document.getElementById('spell-canvas');
     if (!canvas) return;
     var overlay = document.getElementById('spell-overlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) {
+      overlay.style.display = 'flex';
+      // Durante el combate el grimorio debe quedar POR ENCIMA del overlay de combate (z-index 450)
+      var inCombat = false;
+      try { inCombat = CombatEngine.isActive(); } catch(e) {}
+      overlay.style.zIndex = inCombat ? '460' : '';
+    }
 
     canvas.width = overlay ? overlay.clientWidth : 500;
     canvas.height = overlay ? overlay.clientHeight : 500;
@@ -555,8 +583,8 @@ var SpellSystem = (() => {
       drawing = false;
     };
 
-    // Click to select spell
-    canvas.addEventListener('click', function(e) {
+    // Click to select spell (onclick: se sobrescribe solo, no se acumula entre aperturas)
+    canvas.onclick = function(e) {
       var rect = canvas.getBoundingClientRect();
       var mx = (e.clientX - rect.left) * (canvas.width / rect.width);
       var my = (e.clientY - rect.top) * (canvas.height / rect.height);
@@ -574,7 +602,7 @@ var SpellSystem = (() => {
           }
         }
       }
-    });
+    };
 
     animFrame = requestAnimationFrame(render);
   }
@@ -591,6 +619,7 @@ var SpellSystem = (() => {
       canvas.ontouchstart = null;
       canvas.ontouchmove = null;
       canvas.ontouchend = null;
+      canvas.onclick = null;
       canvas.style.pointerEvents = 'none';
     }
   }

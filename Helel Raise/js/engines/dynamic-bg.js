@@ -42,9 +42,16 @@ var DynamicBackgrounds = (() => {
     dintel: 'house', sotano: 'void',
   };
 
+  function resizeBgCanvas() {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+  }
+
   function init() {
     bgCanvas = document.getElementById('bg-canvas');
     bgCtx = bgCanvas.getContext('2d');
+    resizeBgCanvas();
+    window.addEventListener('resize', resizeBgCanvas);
     animFrame = requestAnimationFrame(render);
   }
 

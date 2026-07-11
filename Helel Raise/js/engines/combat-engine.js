@@ -9,6 +9,7 @@ var CombatEngine = (() => {
   var visible = false;
   var animFrame = null;
   var combat = null; // current combat state
+  var endTimeoutId = null; // setTimeout de victoria/derrota — se cancela en endCombat
 
   // ---- ENEMY DEFINITIONS ----
   var enemies = {
@@ -84,6 +85,8 @@ var CombatEngine = (() => {
       onComplete: onComplete || function() {},
       shakeIntensity: 0,
       corruptionLevel: 0, // increases as combat progresses
+      stunTimer: 0,       // frames de aturdimiento (Cadenas del Purgatorio)
+      chargeMultiplier: 1, // multiplicador de carga ritual (Ojo Interior)
     };
   }
 
@@ -162,6 +165,7 @@ var CombatEngine = (() => {
 
         var chargeGain = isPerfect ? 25 : 15;
         chargeGain += combat.combo * 2; // combo bonus
+        if (combat.chargeMultiplier !== 1) chargeGain = Math.round(chargeGain * combat.chargeMultiplier);
         combat.charge = Math.min(100, combat.charge + chargeGain);
 
         // Damage number
@@ -237,7 +241,7 @@ var CombatEngine = (() => {
       combat.attackText = combat.enemy.name + ' ha sido destruido!';
       combat.attackTextTimer = 120;
       try { SoundDesign.infernalChoir(); } catch(e) {}
-      setTimeout(function() { endCombat(true); }, 3000);
+      endTimeoutId = setTimeout(function() { endCombat(true); }, 3000);
       return;
     }
 
@@ -261,15 +265,33 @@ var CombatEngine = (() => {
     // Corruption makes enemies stronger
     dmg += Math.floor(combat.corruptionLevel * 2);
 
-    combat.playerHp -= dmg;
-    combat.hitFlash = 15;
-    combat.shakeIntensity = 8;
-    combat.attackText = attackText + ' (-' + dmg + ')';
+    // Escudo de Sangre: absorbe el próximo golpe y se consume
+    var shielded = false;
+    try {
+      if (typeof state !== 'undefined' && state.flags && state.flags.shielded) {
+        state.flags.shielded = false;
+        try { removeItem('🛡️ Protección espectral'); } catch(e2) {}
+        shielded = true;
+      }
+    } catch(e) {}
+
+    if (shielded) {
+      combat.attackText = attackText + ' — ¡la barrera de sangre lo absorbe!';
+      combat.damageNumbers.push({
+        x: canvas.width / 2, y: canvas.height / 2, text: '🛡️ ESCUDO', life: 50,
+        color: '#c9a84c', size: 18,
+      });
+      try { SoundDesign.chains(); } catch(e) {}
+    } else {
+      combat.playerHp -= dmg;
+      combat.hitFlash = 15;
+      combat.shakeIntensity = 8;
+      combat.attackText = attackText + ' (-' + dmg + ')';
+      try { SoundDesign.demonGrowl(); } catch(e) {}
+      try { GameBus.emit(GameEvents.DAMAGE_FLASH); } catch(e) {}
+    }
     combat.attackTextTimer = 80;
     combat.corruptionLevel += 0.1;
-
-    try { SoundDesign.demonGrowl(); } catch(e) {}
-    try { GameBus.emit(GameEvents.DAMAGE_FLASH); } catch(e) {}
 
     // Check defeat
     if (combat.playerHp <= 0) {
@@ -278,7 +300,7 @@ var CombatEngine = (() => {
       combat.attackText = 'Tu alma ha sido aplastada...';
       combat.attackTextTimer = 120;
       try { SoundDesign.deathSequence(); } catch(e) {}
-      setTimeout(function() { endCombat(false); }, 3000);
+      endTimeoutId = setTimeout(function() { endCombat(false); }, 3000);
       return;
     }
 
@@ -290,6 +312,86 @@ var CombatEngine = (() => {
     setTimeout(function() {
       if (combat) combat.phase = 'active';
     }, 1000);
+  }
+
+  // ---- SPELL EFFECTS (RITUAL_CAST del grimorio, vía init.js) ----
+  function dealSpellDamage(dmg, label) {
+    if (!combat) return;
+    combat.enemy.currentHp -= dmg;
+    combat.enemyHitFlash = 15;
+    combat.shakeIntensity = 8;
+    combat.damageNumbers.push({
+      x: canvas.width / 2, y: 60, text: '-' + dmg + (label ? ' ' + label : ''),
+      life: 50, color: '#c9a84c', size: 18,
+    });
+    spawnHitParticles(canvas.width / 2, 80, '#cc0000', 12);
+
+    if (combat.enemy.currentHp <= 0) {
+      combat.enemy.currentHp = 0;
+      combat.phase = 'victory';
+      combat.attackText = combat.enemy.name + ' ha sido destruido!';
+      combat.attackTextTimer = 120;
+      try { SoundDesign.infernalChoir(); } catch(e) {}
+      endTimeoutId = setTimeout(function() { endCombat(true); }, 3000);
+    }
+  }
+
+  function applySpellEffect(effect) {
+    if (!combat || !visible) return false;
+    if (combat.phase === 'victory' || combat.phase === 'defeat') return false;
+    effect = effect || {};
+
+    switch (effect.spell) {
+      case 'fuego_negro': {
+        var dmg = Math.max(15, Math.min(40, Math.round(effect.damage || 15)));
+        dealSpellDamage(dmg, '🔥 FUEGO NEGRO');
+        return true;
+      }
+      case 'cadenas': {
+        var secs = Math.max(2, Math.min(5, Math.round(effect.stun || 2)));
+        combat.stunTimer = secs * 60; // ~60 fps: pausa rotación y spawn de sigilos
+        combat.attackText = '⛓️ Las cadenas atrapan a ' + combat.enemy.name + ' (' + secs + 's)';
+        combat.attackTextTimer = 80;
+        return true;
+      }
+      case 'ojo_interior': {
+        combat.chargeMultiplier = 1.25; // +25% de carga ritual por click este combate
+        try { if (typeof state !== 'undefined' && state.flags) state.flags.innerEye = false; } catch(e) {}
+        combat.attackText = '👁️ Ves su debilidad: la carga ritual fluye más rápido';
+        combat.attackTextTimer = 80;
+        return true;
+      }
+      case 'nombre_invertido': {
+        var pw = typeof effect.power === 'number' ? effect.power : 0.5;
+        combat.enemy.damage = Math.max(1, Math.round(combat.enemy.damage * (1 - 0.5 * pw)));
+        try { if (typeof state !== 'undefined' && state.flags) state.flags.nameInverted = false; } catch(e) {}
+        combat.attackText = '♾️ El nombre invertido debilita sus ataques';
+        combat.attackTextTimer = 80;
+        return true;
+      }
+      case 'destierro': {
+        if (effect.banish) {
+          if (combat.enemyId === 'belphegor_true') {
+            // El boss final resiste el destierro: daño fuerte en su lugar
+            dealSpellDamage(60, '⛧ SELLO DE DESTIERRO');
+            combat.attackText = 'BELPHEGOR resiste el destierro... pero el sello lo desgarra!';
+            combat.attackTextTimer = 100;
+          } else if (combat.enemy.currentHp > 0) {
+            combat.enemy.currentHp = 0;
+            combat.phase = 'victory';
+            combat.attackText = combat.enemy.name + ' es desterrado al abismo!';
+            combat.attackTextTimer = 120;
+            try { SoundDesign.infernalChoir(); } catch(e) {}
+            endTimeoutId = setTimeout(function() { endCombat(true); }, 3000);
+          }
+        } else {
+          // Sello débil (precisión <= 70%): daño menor
+          dealSpellDamage(10, '⛧ Sello débil');
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   // ---- PARTICLES ----
@@ -364,8 +466,17 @@ var CombatEngine = (() => {
     ctx.fillStyle = '#d4c5a9';
     ctx.fillText(combat.enemy.currentHp + '/' + combat.enemy.maxHp, cx, enemyY + 30);
 
+    // Indicador de aturdimiento (Cadenas del Purgatorio)
+    if (combat.stunTimer > 0 && combat.phase !== 'victory' && combat.phase !== 'defeat') {
+      ctx.font = '12px "Cinzel", serif';
+      ctx.fillStyle = '#c9a84c';
+      ctx.fillText('⛓️ ENCADENADO ' + Math.ceil(combat.stunTimer / 60) + 's', cx, enemyY + 46);
+    }
+
     // ---- SPINNING PENTAGRAM ----
-    if (combat.phase !== 'defeat' && combat.phase !== 'victory') {
+    if (combat.stunTimer > 0) {
+      combat.stunTimer--; // cadenas: la rotación queda congelada
+    } else if (combat.phase !== 'defeat' && combat.phase !== 'victory') {
       combat.rotation += combat.rotSpeed;
     }
 
@@ -599,7 +710,7 @@ var CombatEngine = (() => {
     ctx.restore(); // un-shake
 
     // ---- Sigil spawn timer ----
-    if (combat.phase === 'active') {
+    if (combat.phase === 'active' && combat.stunTimer <= 0) {
       combat.sigilTimer++;
       var spawnInterval = Math.max(20, combat.nextSigilTime - combat.turnCount * 2);
       if (combat.sigilTimer >= spawnInterval) {
@@ -612,12 +723,20 @@ var CombatEngine = (() => {
   }
 
   // ---- START COMBAT ----
+  function resizeCanvas() {
+    if (!canvas) return;
+    var parent = canvas.parentElement;
+    var w = (parent && parent.clientWidth) || window.innerWidth || 500;
+    var h = (parent && parent.clientHeight) || window.innerHeight || 500;
+    if (w > 0 && h > 0) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
   function startCombat(enemyId, onComplete) {
     canvas = document.getElementById('combat-canvas');
     if (!canvas) return;
-    canvas.width = canvas.parentElement.clientWidth || 500;
-    canvas.height = canvas.parentElement.clientHeight || 500;
-    ctx = canvas.getContext('2d');
 
     combat = createCombat(enemyId, onComplete);
     if (!combat) return;
@@ -628,6 +747,25 @@ var CombatEngine = (() => {
       overlay.style.display = 'flex';
       overlay.classList.add('active');
     }
+
+    // Medir DESPUÉS de mostrar el overlay (con display:none, clientWidth = 0)
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Consumir hechizos de bandera lanzados fuera de combate
+    try {
+      if (typeof state !== 'undefined' && state.flags) {
+        if (state.flags.innerEye) {
+          state.flags.innerEye = false;
+          combat.chargeMultiplier = 1.25;
+        }
+        if (state.flags.nameInverted) {
+          state.flags.nameInverted = false;
+          combat.enemy.damage = Math.max(1, Math.round(combat.enemy.damage * 0.6));
+        }
+      }
+    } catch(e) {}
 
     // Start after brief delay
     combat.phase = 'ready';
@@ -654,6 +792,13 @@ var CombatEngine = (() => {
 
   // ---- END COMBAT ----
   function endCombat(victory) {
+    if (!combat) return; // guard de re-entrada: el combate ya terminó
+    if (endTimeoutId) {
+      clearTimeout(endTimeoutId);
+      endTimeoutId = null;
+    }
+    window.removeEventListener('resize', resizeCanvas);
+
     visible = false;
     if (animFrame) cancelAnimationFrame(animFrame);
 
@@ -687,5 +832,6 @@ var CombatEngine = (() => {
     start: startCombat,
     end: endCombat,
     isActive: isActive,
+    applySpellEffect: applySpellEffect,
   };
 })();

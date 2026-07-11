@@ -38,9 +38,19 @@ No es un juego. Es un ritual disfrazado de página web.
 
 ## Jugar
 
-**[⛧ ABRIR EL GRIMORIO ⛧](https://tubalcain777.github.io/grimorio-de-belphegor/Helel%20Raise/grimorio_de_belphegor.html)**
+**[⛧ ABRIR EL GRIMORIO ⛧](https://figaroelbarbero-oss.github.io/grimorio-de-belphegor/Helel%20Raise/grimorio_de_belphegor.html)**
 
 Requiere navegador moderno con JavaScript habilitado. Auriculares recomendados. Luces apagadas. Solo.
+
+### Invocarlo en tu propia máquina
+
+```bash
+git clone https://github.com/figaroelbarbero-oss/grimorio-de-belphegor.git
+```
+
+- **Versión principal**: abre `Helel Raise/grimorio_de_belphegor.html` directamente en el navegador (funciona desde `file://`).
+- **Versión modular** (experimental): necesita un servidor estático —
+  `cd "Helel Raise" && python3 -m http.server 8667` y visita `http://localhost:8667/`.
 
 ---
 

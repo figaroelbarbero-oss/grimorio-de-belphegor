@@ -109,6 +109,9 @@ var MediaEngine = (() => {
   var preloadedImages = {};
   var activeVideoTimeout = null;
   var illustrationEl = null; // inline scene illustration inside game area
+  var atmosFadeTimeout = null;  // atmospheric mode: fade-out timer
+  var atmosPauseTimeout = null; // atmospheric mode: pause timer
+  var subliminalTimeout = null; // subliminal mode: flash-hide timer
 
   // ---- HORROR FILTER PRESETS ----
   // These get progressively worse as soul drops
@@ -342,6 +345,14 @@ var MediaEngine = (() => {
 
     soul = (typeof soul === 'number') ? soul : 100;
 
+    // Cancel timers/handlers from a previous video so they can't
+    // hide or pause this one
+    clearTimeout(atmosFadeTimeout);
+    clearTimeout(atmosPauseTimeout);
+    clearTimeout(subliminalTimeout);
+    videoEl.onloadeddata = null;
+    videoEl.onseeked = null;
+
     videoEl.src = src;
     videoEl.currentTime = 0;
 
@@ -385,30 +396,49 @@ var MediaEngine = (() => {
 
       // Atmospheric videos fade out after 8-15 seconds
       var duration = 8000 + Math.random() * 7000;
-      setTimeout(function() {
+      atmosFadeTimeout = setTimeout(function() {
         videoOverlay.style.opacity = '0';
-        setTimeout(function() {
+        atmosPauseTimeout = setTimeout(function() {
           videoEl.pause();
           videoEl.loop = false;
         }, 2000);
       }, duration);
 
     } else if (mode === 'subliminal') {
-      // Ultra-fast flash of video frame
+      // Ultra-fast flash of video frame — wait for real frame data
+      // before showing to avoid flashing a black frame
       videoOverlay.className = 'video-subliminal';
       videoEl.style.filter = 'brightness(0.5) contrast(3) saturate(0) invert(0.3)';
+      videoOverlay.style.opacity = '0';
 
-      // Seek to a random point
-      videoEl.currentTime = Math.random() * (videoEl.duration || 2);
-      videoOverlay.style.opacity = '0.8';
-      setTimeout(function() {
-        videoOverlay.style.opacity = '0';
-      }, 80 + Math.random() * 120);
+      var flash = function() {
+        videoEl.onseeked = null;
+        videoEl.play().catch(function() {});
+        videoOverlay.style.opacity = '0.8';
+        subliminalTimeout = setTimeout(function() {
+          videoOverlay.style.opacity = '0';
+          videoEl.pause();
+        }, 80 + Math.random() * 120);
+      };
+
+      videoEl.onloadeddata = function() {
+        videoEl.onloadeddata = null;
+        // Seek to a random point, flash once the frame is ready
+        videoEl.onseeked = flash;
+        videoEl.currentTime = Math.random() * (videoEl.duration || 2);
+      };
     }
   }
 
   function hideVideo() {
     if (!videoOverlay) return;
+    clearTimeout(atmosFadeTimeout);
+    clearTimeout(atmosPauseTimeout);
+    clearTimeout(subliminalTimeout);
+    if (videoEl) {
+      videoEl.onloadeddata = null;
+      videoEl.onseeked = null;
+    }
     videoOverlay.style.opacity = '0';
     videoOverlay.style.pointerEvents = 'none';
     videoOverlay.className = '';

@@ -439,3 +439,43 @@ e68b697 Initial commit: El Grimorio de Belphegor v2.0
 - Git author anonimizado: HELEL RAISE <helel@noreply.com>
 - Repo: github.com/figaroelbarbero-oss/grimorio-de-belphegor
 - Git author: `HELEL RAISE <helel@noreply.com>` (anonimizado)
+
+---
+
+## SESION 4 — 2026-07-11 (Auditoria y correcciones)
+
+Auditoria completa del repo (6 subsistemas en paralelo, 65 hallazgos, 11 altos verificados). Correcciones aplicadas:
+
+### Privacidad / Seguridad (correcciones a claims falsos de sesiones previas)
+- **CORRECCION**: La seccion "Seguridad y Privacidad" de la Sesion 2 (`0 API keys`, `0 llamadas de red`, `100% offline`) quedo **obsoleta** tras la Sesion 3. El monolito **SI** hace red: carga `@supabase/supabase-js` desde CDN, tiene una URL + anon key JWT hardcodeadas, y **sube a la nube el nombre real tecleado por el jugador** (`saveEcho`). El juego ya **no es offline**. Nota: el proyecto Supabase `fjplwnqzpbtcsljduser` esta **caido** (NXDOMAIN) — la feature "Ecos de Sangre" falla en silencio.
+- **XSS almacenado corregido**: `showLastVictim()` inyectaba `player_name`/`ending` remotos con `innerHTML`. Reescrito con `textContent` + creacion de nodos (y truncado a 40 chars).
+- **Microfono**: `stopMicrophoneListener()` solo ponia un flag; ahora libera el stream (`getTracks().stop()`) y cierra el `AudioContext` — el indicador de grabacion del navegador ya no queda encendido.
+- **CORRECCION anonimato**: la Sesion 2 afirmaba "cero trazas del nombre original", pero 13 de 15 commits publicos seguian firmados con el nombre/email personal. Historial reescrito por completo a `HELEL RAISE <helel@noreply.com>` + `user.name/email` locales del repo configurados. (Force push realizado; GitHub puede cachear commits viejos.)
+
+### Bugs de juego corregidos (monolito)
+- **Finales inalcanzables**: los `next`/`text`/`risk` con ternarios se congelaban al parsear (`state.flags` vacio) — final secreto, espejo y escena "resistencia" eran inaccesibles. Convertidos a funciones lazy; `loadScene` ahora resuelve `text`/`risk` como funciones.
+- **Softlock final SUPERVIVIENTE**: tras la intervencion de Baal no habia salida y el final no se registraba. Añadido boton "ESCAPAR DE LA COLECCION" → `restart` (que registra el ending una sola vez).
+- `${() => state.soul}` mostrado literal → placeholder escapado.
+- Drone: segundo oscilador (`osc2`) bypaseaba el mute → enrutado por `droneGain`.
+- `${deaths}` ReferenceError en recuerdos NG+ → string literal + `.replace`.
+- `creepyText(texto)` ignoraba su argumento (micro/bateria) → acepta `custom`.
+- Narracion TTS solapada entre escenas → token de generacion.
+- `CursedCursor` acumulaba listeners por partida → bind unico.
+- Overlay `window.onerror` de debug en produccion (ambos HTML) → gated tras `?debug=1`.
+
+### Bugs de juego corregidos (version modular, js/engines/)
+- **Hechizos sin efecto**: cobraban alma y no hacian nada (`RITUAL_CAST` sin listener). Añadida API `CombatEngine.applySpellEffect` + listener en `init.js`; escudo/ojo/inversion consumen sus flags. Los hechizos de combate ya no cobran alma fuera de combate.
+- `endCombat` re-entrante (doble `changeSoul`), canvas medido con overlay oculto, fuga de listener en `SpellSystem.show`, pactos que morian tras el primero, drone-mute, TTS solapada, `${deaths}`, backfill de saves antiguos, `corruption` con soul=0, fugas de timers en whispers/jumpscare/media, `dynamic-bg` a 300×150, guia maldita con 9/12 finales, `drawHorrorFace` muerta (~300 lineas) eliminada.
+
+### Higiene del repo
+- Eliminada la pagina de Pinterest guardada (94 archivos, ~12.6 MB).
+- Eliminadas 12 imagenes duplicadas byte-a-byte + 16 jpg con nombre-hash sin referencias.
+- `.gitignore` endurecido (`*_original.mp3`, `*.mp4` en root, `*_files/`, `Pin en *`).
+- Añadido `LICENSE` (MIT para el codigo; assets de terceros excluidos).
+- README: enlace de "Jugar" corregido (apuntaba a `tubalcain777`, 404) + instrucciones de ejecucion local.
+- `preload="none"` en el `<audio>` (antes `auto`, forzaba descarga de 62 MB al abrir).
+
+### Pendiente (no resuelto en esta sesion)
+- **`horror_ambient.mp3` (62 MB) sigue trackeado** — supera el warning de 50 MB de GitHub; recomprimir a mono ~96 kbps o migrar a Git LFS.
+- Recomprimir reduce clone y `.git` (~79 MB); requiere reescritura de historial adicional.
+- **Fork monolito vs modular sin unificar**: siguen siendo dos juegos divergentes; decidir version canonica.

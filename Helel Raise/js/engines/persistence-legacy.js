@@ -29,6 +29,11 @@ var Persistence = (() => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         data = JSON.parse(raw);
+        // Backfill fields missing in saves from older versions
+        const defaults = defaultData();
+        for (const k in defaults) {
+          if (data[k] === undefined) data[k] = defaults[k];
+        }
         data.lastVisit = Date.now();
       } else {
         data = defaultData();

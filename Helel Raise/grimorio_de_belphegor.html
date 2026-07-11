@@ -860,7 +860,7 @@
 <div class="blood-drip" style="left: 92%; animation-delay: 3s;"></div>
 
 <!-- Horror Ambient Music -->
-<audio id="horror-music" loop preload="auto">
+<audio id="horror-music" loop preload="none">
   <source src="audio/horror_ambient.mp3" type="audio/mpeg">
 </audio>
 
@@ -967,7 +967,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// Debug overlay only when explicitly requested (?debug=1). In production a stray
+// error should log to console, not paint a red stack trace over the game.
 window.onerror = function(msg, src, line, col, err) {
+  if (!/[?&]debug=1\b/.test(location.search)) {
+    console.error('ERROR linea ' + line + ': ' + msg, err && err.stack ? err.stack : '');
+    return;
+  }
   document.title = 'ERROR: ' + msg;
   const d = document.createElement('div');
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#200;color:#f88;padding:10px;font:12px monospace;white-space:pre-wrap;';
@@ -1080,14 +1086,15 @@ function startDrone() {
   droneGain.connect(audioCtx.destination);
   droneOsc.start();
 
-  // Second detuned oscillator for dissonance
+  // Second detuned oscillator for dissonance — route through droneGain so the
+  // mute fade in toggleAudio() silences it too (it used to bypass it).
   const osc2 = audioCtx.createOscillator();
   osc2.type = 'sine';
   osc2.frequency.value = 56.5;
   const g2 = audioCtx.createGain();
-  g2.gain.value = 0.04;
+  g2.gain.value = 0.5; // relative to droneGain (0.08 * 0.5 ≈ prior 0.04)
   osc2.connect(g2);
-  g2.connect(audioCtx.destination);
+  g2.connect(droneGain);
   osc2.start();
 }
 
@@ -1589,7 +1596,7 @@ const scenes = {
     choices: [
       { text: "Aceptar el pacto — pronunciar las palabras", risk: "fatal", next: "invocacion", effect: () => { changeSoul(-25); state.flags.pactAccepted = true; }},
       { text: "Arrancar la página del pacto", risk: "high", next: "pagina_arrancada", effect: () => { changeSoul(-20); }},
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB — el nombre al revés" : "Escupir sobre la firma", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "nombre_invertido" : "invocacion", effect: () => { changeSoul(state.flags.trueName ? -5 : -25); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB — el nombre al revés" : "Escupir sobre la firma", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "nombre_invertido" : "invocacion", effect: () => { changeSoul(state.flags.trueName ? -5 : -25); }},
     ]
   },
 
@@ -1599,7 +1606,7 @@ const scenes = {
     choices: [
       { text: "Ir a buscar un espejo roto arriba", risk: "medium", next: "espejo", effect: () => { state.flags.needsMirror = true; addItem("📖 Hechizo de Espejo Oscuro"); }},
       { text: "Leer el hechizo de invocación original — enfrentarlo directamente", risk: "fatal", next: "invocacion", effect: () => { changeSoul(-20); }},
-      { text: state.inventory.includes("🪞 Fragmento de espejo") ? "¡Ya tienes un fragmento! Preparar el Hechizo de Espejo Oscuro" : "Buscar en la sala algo reflectante", risk: "medium", next: state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "sala_ritual", effect: () => { changeSoul(-5); }},
+      { text: () => state.inventory.includes("🪞 Fragmento de espejo") ? "¡Ya tienes un fragmento! Preparar el Hechizo de Espejo Oscuro" : "Buscar en la sala algo reflectante", risk: "medium", next: () => state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "sala_ritual", effect: () => { changeSoul(-5); }},
     ]
   },
 
@@ -1625,9 +1632,9 @@ const scenes = {
     chapter: "Capítulo VI — La Invocación",
     text: `Las palabras salen de tu boca antes de que tu mente las procese. No las lees — <span class="highlight">ellas te leen a ti</span>. Tu voz se duplica, se triplica. Suenan voces que no son tuyas hablando en lenguas que la humanidad olvidó.<br><br>El pentagrama del suelo se enciende en <span class="highlight">fuego negro</span> — llamas que absorben la luz en lugar de emitirla. La temperatura cae hasta que puedes ver tu aliento cristalizarse y caer como nieve roja.<br><br>Del centro del pentagrama, la realidad se <span class="highlight">rasga como tela</span>. Una mano emerge — inmensa, negra como el vacío, con dedos terminados en garras que gotean una sustancia que disuelve el suelo.<br><br><span class="gold">BELPHEGOR</span> se levanta. Es más grande que la sala. Se pliega sobre sí mismo para caber. Su rostro es una <span class="highlight">máscara de cráneos fundidos</span>, y sus ojos son soles muertos, amarillos y hambrientos.<br><br><span class="whisper">"Por fin. Hueles... exquisito."</span>`,
     choices: [
-      { text: state.flags.trueName ? "Gritar: ¡ROGEHPLEB! — Su nombre invertido" : "Ofrecerle tu alma a cambio de poder", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "nombre_invertido" : "final_malo", effect: () => { changeSoul(state.flags.trueName ? -5 : -40); }},
-      { text: state.inventory.includes("🪞 Fragmento de espejo") ? "Activar el Hechizo de Espejo Oscuro con el fragmento" : "Intentar cerrar el portal con tu cuerpo", risk: state.inventory.includes("🪞 Fragmento de espejo") ? "high" : "fatal", next: state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "final_malo", effect: () => { changeSoul(state.inventory.includes("🪞 Fragmento de espejo") ? -15 : -40); }},
-      { text: state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "Usar tu protección para resistir su poder" : "Correr hacia la puerta", risk: "high", next: state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "resistencia" : "final_malo", effect: () => { changeSoul(-15); }},
+      { text: () => state.flags.trueName ? "Gritar: ¡ROGEHPLEB! — Su nombre invertido" : "Ofrecerle tu alma a cambio de poder", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "nombre_invertido" : "final_malo", effect: () => { changeSoul(state.flags.trueName ? -5 : -40); }},
+      { text: () => state.inventory.includes("🪞 Fragmento de espejo") ? "Activar el Hechizo de Espejo Oscuro con el fragmento" : "Intentar cerrar el portal con tu cuerpo", risk: () => state.inventory.includes("🪞 Fragmento de espejo") ? "high" : "fatal", next: () => state.inventory.includes("🪞 Fragmento de espejo") ? "espejo_oscuro" : "final_malo", effect: () => { changeSoul(state.inventory.includes("🪞 Fragmento de espejo") ? -15 : -40); }},
+      { text: () => state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "Usar tu protección para resistir su poder" : "Correr hacia la puerta", risk: "high", next: () => state.flags.sigil || state.inventory.includes("🛡️ Protección espectral") ? "resistencia" : "final_malo", effect: () => { changeSoul(-15); }},
     ]
   },
 
@@ -1681,7 +1688,7 @@ const scenes = {
     choices: [
       { text: "Negociar: pedir conocimiento a cambio de un favor futuro", risk: "high", next: "final_pacto", effect: () => { changeSoul(-20); }},
       { text: "Rechazar el trato y salir mientras está atrapado", risk: "safe", next: "final_bueno", effect: () => {} },
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB para destruirlo dentro de la trampa" : "Sellar el pentagrama permanentemente con tu sangre", risk: state.flags.trueName ? "medium" : "fatal", next: state.flags.trueName ? "final_secreto" : "final_guardian", effect: () => { changeSoul(state.flags.trueName ? -5 : -30); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB para destruirlo dentro de la trampa" : "Sellar el pentagrama permanentemente con tu sangre", risk: () => state.flags.trueName ? "medium" : "fatal", next: () => state.flags.trueName ? "final_secreto" : "final_guardian", effect: () => { changeSoul(state.flags.trueName ? -5 : -30); }},
     ]
   },
 
@@ -1689,7 +1696,7 @@ const scenes = {
     chapter: "Capítulo VII — El Juicio",
     text: `Tu protección brilla — el sigilo, la protección espectral, lo que tengas. Belphegor retrocede un paso. <span class="highlight">Un solo paso</span>. Pero es suficiente.<br><br><span class="whisper">"Interesante. Tienes amigos en los lugares correctos. O los tenías."</span><br><br>El demonio no puede poseerte directamente. Pero la casa es suya, y comienza a <span class="highlight">contraerse</span>. Las paredes se acercan. El techo baja. El suelo se inclina hacia el pentagrama como un embudo de carne y piedra.`,
     choices: [
-      { text: state.flags.trueName ? "Gritar ROGEHPLEB ahora que no puede tocarte" : "Correr hacia la puerta antes de que la casa te aplaste", risk: state.flags.trueName ? "medium" : "high", next: state.flags.trueName ? "nombre_invertido" : "final_escape", effect: () => { changeSoul(state.flags.trueName ? -5 : -15); }},
+      { text: () => state.flags.trueName ? "Gritar ROGEHPLEB ahora que no puede tocarte" : "Correr hacia la puerta antes de que la casa te aplaste", risk: () => state.flags.trueName ? "medium" : "high", next: () => state.flags.trueName ? "nombre_invertido" : "final_escape", effect: () => { changeSoul(state.flags.trueName ? -5 : -15); }},
     ]
   },
 
@@ -1697,8 +1704,8 @@ const scenes = {
     chapter: "Capítulo VII — El Juicio",
     text: `Enciendes la vela negra. Su llama es <span class="highlight">invertida</span> — la punta hacia abajo, como una gota de fuego cayendo hacia el infierno. Pero ilumina. Y en esa luz, Belphegor aparece. No como un monstruo — como un hombre. Traje negro, ojos amarillos, sonrisa de cuchillo.<br><br><span class="whisper">"Arrancaste mi contrato. Eso dolió. Los contratos son sagrados, incluso para nosotros."</span><br><br>Levanta la mano. En ella, la <span class="highlight">página del pacto</span>, restaurada. <span class="whisper">"Siempre hay una copia."</span>`,
     choices: [
-      { text: "Quemar la página con la vela negra", risk: "high", next: state.flags.trueName ? "final_secreto" : "final_escape", effect: () => { changeSoul(-15); }},
-      { text: state.flags.trueName ? "Pronunciar ROGEHPLEB" : "Negarse. Simplemente decir NO.", risk: state.flags.trueName ? "medium" : "high", next: state.flags.trueName ? "nombre_invertido" : "final_voluntad", effect: () => { changeSoul(state.flags.trueName ? -5 : -10); }},
+      { text: "Quemar la página con la vela negra", risk: "high", next: () => state.flags.trueName ? "final_secreto" : "final_escape", effect: () => { changeSoul(-15); }},
+      { text: () => state.flags.trueName ? "Pronunciar ROGEHPLEB" : "Negarse. Simplemente decir NO.", risk: () => state.flags.trueName ? "medium" : "high", next: () => state.flags.trueName ? "nombre_invertido" : "final_voluntad", effect: () => { changeSoul(state.flags.trueName ? -5 : -10); }},
     ]
   },
 
@@ -1725,7 +1732,7 @@ const scenes = {
   // ===== ENDINGS =====
   final_bueno: {
     chapter: "⛧ FINAL — SUPERVIVIENTE ⛧",
-    text: `<div class="ending-title ending-good">SUPERVIVIENTE</div>Sales de la casa. La puerta se cierra detrás de ti con un suspiro, como un pulmón exhalando por última vez. La lluvia se ha detenido. El cielo es gris pero ya no opresivo.<br><br>La casona comienza a <span class="highlight">envejecer</span> visiblemente. La madera se pudre, las ventanas colapsan, el techo cede. En minutos, es solo un montón de escombros cubiertos de enredaderas negras.<br><br>Caminas. No miras atrás. Pero durante el resto de tu vida, cada vez que mires un espejo, te parecerá ver — solo por un instante — <span class="highlight">unos ojos amarillos</span> detrás de tu reflejo.<br><br><span class="gold">Has sobrevivido. Pero Belphegor tiene buena memoria. Y la eternidad es paciente.</span><br><br><span class="whisper">Alma restante: ${() => state.soul}%</span>`,
+    text: `<div class="ending-title ending-good">SUPERVIVIENTE</div>Sales de la casa. La puerta se cierra detrás de ti con un suspiro, como un pulmón exhalando por última vez. La lluvia se ha detenido. El cielo es gris pero ya no opresivo.<br><br>La casona comienza a <span class="highlight">envejecer</span> visiblemente. La madera se pudre, las ventanas colapsan, el techo cede. En minutos, es solo un montón de escombros cubiertos de enredaderas negras.<br><br>Caminas. No miras atrás. Pero durante el resto de tu vida, cada vez que mires un espejo, te parecerá ver — solo por un instante — <span class="highlight">unos ojos amarillos</span> detrás de tu reflejo.<br><br><span class="gold">Has sobrevivido. Pero Belphegor tiene buena memoria. Y la eternidad es paciente.</span><br><br><span class="whisper">Alma restante: \${state.soul}%</span>`,
     choices: [
       { text: "⛧ JUGAR DE NUEVO ⛧", risk: "safe", next: () => { triggerBaalIntervention(); return null; }, effect: () => {} }
     ]
@@ -2118,13 +2125,17 @@ var _micActive = false;
 var _micAnalyser = null;
 var _micSilenceTimer = 0;
 var _micLastReaction = 0;
+var _micStream = null;
+var _micCtx = null;
 
 function startMicrophoneListener() {
   if (_micActive) return;
   try {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
       _micActive = true;
+      _micStream = stream;
       var micCtx = new (window.AudioContext || window.webkitAudioContext)();
+      _micCtx = micCtx;
       var source = micCtx.createMediaStreamSource(stream);
       _micAnalyser = micCtx.createAnalyser();
       _micAnalyser.fftSize = 256;
@@ -2217,6 +2228,13 @@ function showMicReaction(text) {
 
 function stopMicrophoneListener() {
   _micActive = false;
+  // Actually release the hardware: stop the tracks (turns off the browser's
+  // recording indicator) and close the AudioContext.
+  try { if (_micStream) _micStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+  try { if (_micCtx && _micCtx.state !== 'closed') _micCtx.close(); } catch(e) {}
+  _micStream = null;
+  _micCtx = null;
+  _micAnalyser = null;
 }
 
 // ====== BATTERY PARANOIA ======
@@ -2638,8 +2656,12 @@ function loadScene(sceneId, fromRisk) {
       btn.style.animationDelay = (i * 0.15) + 's';
       btn.style.opacity = '0';
 
+      // Resolve lazy text/risk (functions evaluate against current state, not parse time)
+      const choiceText = typeof choice.text === 'function' ? choice.text() : choice.text;
+      const choiceRisk = typeof choice.risk === 'function' ? choice.risk() : choice.risk;
+
       // ---- NarrativeAI: Enhance choice text (no risk labels — blind choices) ----
-      const enhancedText = NarrativeAI.enhanceChoiceText(choice.text, choice.risk);
+      const enhancedText = NarrativeAI.enhanceChoiceText(choiceText, choiceRisk);
 
       btn.innerHTML = `<span class="choice-number">${i + 1}.</span> ${enhancedText}`;
 
@@ -2654,7 +2676,7 @@ function loadScene(sceneId, fromRisk) {
 
         // Check for death
         if (state.soul <= 0) {
-          loadScene('final_malo', choice.risk);
+          loadScene('final_malo', choiceRisk);
           return;
         }
 
@@ -2665,7 +2687,7 @@ function loadScene(sceneId, fromRisk) {
         // null means the effect handled navigation (e.g. triggerBaalIntervention)
         if (nextScene === null || nextScene === undefined) return;
 
-        loadScene(nextScene, choice.risk);
+        loadScene(nextScene, choiceRisk);
       });
 
       choices.appendChild(btn);
@@ -2862,7 +2884,24 @@ const SupabaseEngine = (() => {
         setTimeout(() => {
           const popup = document.createElement('div');
           popup.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;background:rgba(139,0,0,0.9);border:1px solid #ff4444;padding:15px 25px;border-radius:5px;font-family:Cinzel,serif;color:#d4c5a9;box-shadow:0 0 30px rgba(139,0,0,0.5);animation:fadeIn 0.5s ease;text-align:center;max-width:400px;';
-          popup.innerHTML = '<div style="font-size:0.7rem;letter-spacing:2px;margin-bottom:5px;">🩸 ECO DE SANGRE DETECTADO 🩸</div><div style="font-size:0.9rem;">El último en entrar fue <b>' + victim.player_name + '</b>. Su alma fue consumida hace ' + minutesAgo + ' minutos en el final: <i>' + victim.ending.replace('final_','').toUpperCase() + '</i>.</div>';
+          // Remote values (player_name, ending) come from a public table — build with
+          // textContent so they can never inject markup/scripts.
+          const header = document.createElement('div');
+          header.style.cssText = 'font-size:0.7rem;letter-spacing:2px;margin-bottom:5px;';
+          header.textContent = '🩸 ECO DE SANGRE DETECTADO 🩸';
+          const body = document.createElement('div');
+          body.style.fontSize = '0.9rem';
+          const nameEl = document.createElement('b');
+          nameEl.textContent = String(victim.player_name || 'Alma anónima').slice(0, 40);
+          const endingEl = document.createElement('i');
+          endingEl.textContent = String(victim.ending || '').replace('final_', '').toUpperCase().slice(0, 40);
+          body.appendChild(document.createTextNode('El último en entrar fue '));
+          body.appendChild(nameEl);
+          body.appendChild(document.createTextNode('. Su alma fue consumida hace ' + minutesAgo + ' minutos en el final: '));
+          body.appendChild(endingEl);
+          body.appendChild(document.createTextNode('.'));
+          popup.appendChild(header);
+          popup.appendChild(body);
           document.body.appendChild(popup);
           try { SoundDesign.boneCrack(); } catch(e) {}
           setTimeout(() => { popup.style.opacity = '0'; popup.style.transition = 'opacity 2s'; setTimeout(() => popup.remove(), 2000); }, 7000);
@@ -2895,6 +2934,16 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(function() { document.body.classList.remove('shake'); }, 600);
       setTimeout(function() {
         try { JumpscareEngine.horrorSequence(); } catch(e) {}
+        // 5) Offer a way out — avoid softlocking the player on this final
+        var choicesEl = document.getElementById('choices');
+        if (choicesEl && !document.getElementById('baal-restart-btn')) {
+          var btn = document.createElement('button');
+          btn.id = 'baal-restart-btn';
+          btn.className = 'choice-btn fade-in';
+          btn.innerHTML = '<span class="choice-number">⛧</span> ESCAPAR DE LA COLECCIÓN';
+          btn.addEventListener('click', function() { loadScene('restart'); });
+          choicesEl.appendChild(btn);
+        }
       }, 3000);
     });
   }
@@ -3201,7 +3250,7 @@ const NewGamePlus = (() => {
           `<br><br><span class="highlight">"La última vez que estuviste aquí, en este exacto momento, elegiste diferente. ¿O fue igual? Ya no recuerdo. Todas tus vidas se mezclan."</span>`,
           `<br><br><span class="highlight">"Esto ya lo viviste. ¿Lo sientes? El déjà vu no es un error de tu cerebro. Es un eco de tus muertes anteriores."</span>`,
           `<br><br><span class="whisper">"En otra vida, esto te mató. ¿Será esta la excepción?"</span>`,
-          `<br><br><span class="highlight">"${deaths} muertes y sigues intentando. Los humanos son... fascinantes en su terquedad."</span>`.replace('${deaths}', d.totalDeaths),
+          '<br><br><span class="highlight">"${deaths} muertes y sigues intentando. Los humanos son... fascinantes en su terquedad."</span>'.replace('${deaths}', d.totalDeaths),
         ];
         text += ngLines[Math.floor(Math.random() * ngLines.length)];
       }
@@ -3260,6 +3309,17 @@ const CursedCursor = (() => {
   let cursorPhase = 'normal'; // normal, bloody, possessed, hidden
   let autonomousTimer = null;
   let trailPoints = [];
+  let _listenersBound = false;
+
+  function _onResize() {
+    if (!trailCanvas) return;
+    trailCanvas.width = window.innerWidth;
+    trailCanvas.height = window.innerHeight;
+  }
+  function _onMouseMove(e) {
+    mouseX = e.clientX; mouseY = e.clientY;
+    if (active && cursorPhase === 'bloody') addTrailPoint(mouseX, mouseY);
+  }
 
   const cursorStyles = {
     normal: 'default',
@@ -3281,17 +3341,13 @@ const CursedCursor = (() => {
     trailCtx = trailCanvas.getContext('2d');
     document.body.appendChild(trailCanvas);
 
-    window.addEventListener('resize', () => {
-      trailCanvas.width = window.innerWidth;
-      trailCanvas.height = window.innerHeight;
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX; mouseY = e.clientY;
-      if (active && cursorPhase === 'bloody') {
-        addTrailPoint(mouseX, mouseY);
-      }
-    });
+    // Bind global listeners only once — init() runs on every new game and this
+    // used to stack a fresh mousemove/resize handler each time.
+    if (!_listenersBound) {
+      window.addEventListener('resize', _onResize);
+      document.addEventListener('mousemove', _onMouseMove);
+      _listenersBound = true;
+    }
 
     active = true;
     startCursorCycle();
@@ -3672,6 +3728,7 @@ const MacabreVoice = (() => {
   let voiceReady = false;
   let selectedVoice = null;
   let reverbNode = null;
+  let _narrationGen = 0;
   let voiceGain = null;
 
   // Preferred voices — deepest/darkest available
@@ -3847,14 +3904,16 @@ const MacabreVoice = (() => {
   async function narrateScene(html) {
     if (!enabled || !voiceReady) return;
 
-    // Cancel any ongoing speech
+    // Cancel any ongoing speech and claim a new generation so any still-running
+    // loop from the previous scene exits instead of interleaving its phrases.
     stop();
+    const my = ++_narrationGen;
 
     const cleanText = stripHTML(html);
     const phrases = splitIntoPhrases(cleanText);
 
     for (let i = 0; i < phrases.length; i++) {
-      if (!enabled) break; // Allow stopping mid-narration
+      if (!enabled || my !== _narrationGen) break; // stop if disabled or superseded
 
       const phrase = phrases[i];
       const mood = detectMood(phrase);
@@ -3881,6 +3940,7 @@ const MacabreVoice = (() => {
   }
 
   function stop() {
+    _narrationGen++; // invalidate any in-flight narrateScene loop
     speechSynthesis.cancel();
     speaking = false;
     currentUtterance = null;
@@ -6109,7 +6169,7 @@ const JumpscareEngine = (() => {
   }
 
   // 6) Creepy text flash
-  function triggerCreepyText() {
+  function triggerCreepyText(custom) {
     const el = document.getElementById('creepy-text');
     const texts = [
       'TE VEO', 'DETRÁS DE TI', 'NO ESTÁS SOLO', '¿ME RECUERDAS?',
@@ -6118,7 +6178,7 @@ const JumpscareEngine = (() => {
       'CORR E', 'N O  T E  M U E V A S', '6 6 6'
     ];
 
-    el.textContent = texts[Math.floor(Math.random() * texts.length)];
+    el.textContent = custom || texts[Math.floor(Math.random() * texts.length)];
     el.style.top = (10 + Math.random() * 70) + '%';
     el.style.left = (5 + Math.random() * 60) + '%';
     el.style.fontSize = (2 + Math.random() * 4) + 'rem';

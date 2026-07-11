@@ -5,8 +5,7 @@ var MacabreVoice = (() => {
   let currentUtterance = null;
   let voiceReady = false;
   let selectedVoice = null;
-  let reverbNode = null;
-  let voiceGain = null;
+  let session = 0; // generation token — invalidates stale narration loops
 
   // Preferred voices — deepest/darkest available
   const preferredVoices = [
@@ -41,34 +40,6 @@ var MacabreVoice = (() => {
 
     loadVoices();
     speechSynthesis.onvoiceschanged = loadVoices;
-
-    // Create reverb/distortion chain if Web Audio available
-    if (audioCtx) {
-      setupAudioChain();
-    }
-  }
-
-  function setupAudioChain() {
-    // We'll use Web Audio for ambient effects during speech
-    if (!audioCtx) return;
-
-    voiceGain = audioCtx.createGain();
-    voiceGain.gain.value = 1;
-
-    // Create impulse response for reverb effect (cathedral-like)
-    const sampleRate = audioCtx.sampleRate;
-    const length = sampleRate * 3; // 3 second reverb tail
-    const impulse = audioCtx.createBuffer(2, length, sampleRate);
-
-    for (let channel = 0; channel < 2; channel++) {
-      const data = impulse.getChannelData(channel);
-      for (let i = 0; i < length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
-      }
-    }
-
-    reverbNode = audioCtx.createConvolver();
-    reverbNode.buffer = impulse;
   }
 
   // Strip HTML tags for clean TTS text
@@ -173,14 +144,15 @@ var MacabreVoice = (() => {
   async function narrateScene(html) {
     if (!enabled || !voiceReady) return;
 
-    // Cancel any ongoing speech
+    // Cancel any ongoing speech (also invalidates older loops)
     stop();
+    const my = ++session;
 
     const cleanText = stripHTML(html);
     const phrases = splitIntoPhrases(cleanText);
 
     for (let i = 0; i < phrases.length; i++) {
-      if (!enabled) break; // Allow stopping mid-narration
+      if (my !== session || !enabled) break; // Allow stopping mid-narration
 
       const phrase = phrases[i];
       const mood = detectMood(phrase);
@@ -207,6 +179,7 @@ var MacabreVoice = (() => {
   }
 
   function stop() {
+    session++; // kill any narration loop still awaiting
     speechSynthesis.cancel();
     speaking = false;
     currentUtterance = null;

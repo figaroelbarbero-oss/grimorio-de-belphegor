@@ -53,13 +53,15 @@ function startDrone() {
   droneOsc.start();
 
   // Second detuned oscillator for dissonance
+  // Routed through droneGain so toggleAudio silences it too.
+  // 0.5 * droneGain (0.08) = 0.04 audible, same mix as before.
   const osc2 = audioCtx.createOscillator();
   osc2.type = 'sine';
   osc2.frequency.value = 56.5;
   const g2 = audioCtx.createGain();
-  g2.gain.value = 0.04;
+  g2.gain.value = 0.5;
   osc2.connect(g2);
-  g2.connect(audioCtx.destination);
+  g2.connect(droneGain);
   osc2.start();
 }
 

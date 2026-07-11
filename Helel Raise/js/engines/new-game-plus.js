@@ -94,7 +94,7 @@ var NewGamePlus = (() => {
           `<br><br><span class="highlight">"La última vez que estuviste aquí, en este exacto momento, elegiste diferente. ¿O fue igual? Ya no recuerdo. Todas tus vidas se mezclan."</span>`,
           `<br><br><span class="highlight">"Esto ya lo viviste. ¿Lo sientes? El déjà vu no es un error de tu cerebro. Es un eco de tus muertes anteriores."</span>`,
           `<br><br><span class="whisper">"En otra vida, esto te mató. ¿Será esta la excepción?"</span>`,
-          `<br><br><span class="highlight">"${deaths} muertes y sigues intentando. Los humanos son... fascinantes en su terquedad."</span>`.replace('${deaths}', d.totalDeaths),
+          `<br><br><span class="highlight">"${d.totalDeaths} muertes y sigues intentando. Los humanos son... fascinantes en su terquedad."</span>`,
         ];
         text += ngLines[Math.floor(Math.random() * ngLines.length)];
       }

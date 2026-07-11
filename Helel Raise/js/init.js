@@ -71,6 +71,18 @@
     }
   });
 
+  // ---- Wire Ritual Spells (grimorio) to Combat ----
+  Bus.on(E.RITUAL_CAST, (data) => {
+    // En combate el hechizo golpea al enemigo. Fuera de combate, los hechizos
+    // de bandera (escudo, ojo interior, inversión) ya dejaron su flag en state
+    // y el CombatEngine los consume al entrar al próximo combate.
+    try {
+      if (CombatEngine.isActive()) {
+        CombatEngine.applySpellEffect(data);
+      }
+    } catch(e) {}
+  });
+
   // ---- Wire Inventory Updates ----
   Bus.on(E.INVENTORY_CHANGED, ({ inventory }) => {
     const inv = document.getElementById('inventory');
@@ -192,7 +204,7 @@
   Bus.on(E.SCENE_LOAD, ({ sceneId, fromRisk }) => {
     // Media Engine: set scene background photo + trigger videos
     try {
-      var soul = (typeof state !== 'undefined' && state.soul) ? state.soul : 100;
+      var soul = (typeof state !== 'undefined' && typeof state.soul === 'number') ? state.soul : 100;
       MediaEngine.setScene(sceneId, soul);
     } catch(e) {}
 
